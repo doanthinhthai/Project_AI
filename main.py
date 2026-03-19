@@ -1,7 +1,7 @@
 import pygame
 from core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN, FPS
-from game.piece import Piece
 from ui.renderer import Renderer
+from game.board import Board
 
 
 def main():
@@ -13,15 +13,7 @@ def main():
 
     clock = pygame.time.Clock()
     renderer = Renderer(screen)
-
-    pieces = [
-        Piece("R", 1, 9, 0),
-        Piece("N", 1, 9, 1),
-        Piece("K", 1, 9, 4),
-        Piece("K", -1, 0, 4),
-        Piece("R", -1, 0, 0),
-        Piece("C", -1, 2, 1),
-    ]
+    board = Board()
 
     running = True
     while running:
@@ -33,6 +25,7 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     running = False
 
+        pieces = board.get_all_pieces()
         renderer.render(pieces)
         clock.tick(FPS)
 
