@@ -2,7 +2,8 @@ import pygame
 from core.constants import (
     BOARD_ROWS, BOARD_COLS,
     CELL_SIZE, BOARD_OFFSET_X, BOARD_OFFSET_Y,
-    WHITE, BLACK_COLOR, RED_COLOR, BEIGE
+    WHITE, BLACK_COLOR, RED_COLOR, BEIGE,
+    SELECT_COLOR, VALID_MOVE_COLOR
 )
 
 
@@ -19,60 +20,52 @@ class Renderer:
         y0 = BOARD_OFFSET_Y
         x1 = BOARD_OFFSET_X + (BOARD_COLS - 1) * CELL_SIZE
         y1 = BOARD_OFFSET_Y + (BOARD_ROWS - 1) * CELL_SIZE
-    
-        # 1) Vẽ các đường ngang
+
+        # Đường ngang
         for row in range(BOARD_ROWS):
             y = y0 + row * CELL_SIZE
             pygame.draw.line(self.screen, BLACK_COLOR, (x0, y), (x1, y), 2)
-    
-        # 2) Vẽ các đường dọc
+
+        # Đường dọc có sông
         for col in range(BOARD_COLS):
             x = x0 + col * CELL_SIZE
-    
-            # Hai cột biên vẽ full từ trên xuống dưới
             if col == 0 or col == BOARD_COLS - 1:
                 pygame.draw.line(self.screen, BLACK_COLOR, (x, y0), (x, y1), 2)
             else:
-                # Nửa trên bàn cờ
-                pygame.draw.line(
-                    self.screen,
-                    BLACK_COLOR,
-                    (x, y0),
-                    (x, y0 + 4 * CELL_SIZE),
-                    2
-                )
-                # Nửa dưới bàn cờ
-                pygame.draw.line(
-                    self.screen,
-                    BLACK_COLOR,
-                    (x, y0 + 5 * CELL_SIZE),
-                    (x, y1),
-                    2
-                )
-    
-        # 3) Vẽ chéo cung tướng phía trên
-        pygame.draw.line(
-            self.screen, BLACK_COLOR,
-            (x0 + 3 * CELL_SIZE, y0),
-            (x0 + 5 * CELL_SIZE, y0 + 2 * CELL_SIZE), 2
-        )
-        pygame.draw.line(
-            self.screen, BLACK_COLOR,
-            (x0 + 5 * CELL_SIZE, y0),
-            (x0 + 3 * CELL_SIZE, y0 + 2 * CELL_SIZE), 2
-        )
-    
-        # 4) Vẽ chéo cung tướng phía dưới
-        pygame.draw.line(
-            self.screen, BLACK_COLOR,
-            (x0 + 3 * CELL_SIZE, y0 + 7 * CELL_SIZE),
-            (x0 + 5 * CELL_SIZE, y0 + 9 * CELL_SIZE), 2
-        )
-        pygame.draw.line(
-            self.screen, BLACK_COLOR,
-            (x0 + 5 * CELL_SIZE, y0 + 7 * CELL_SIZE),
-            (x0 + 3 * CELL_SIZE, y0 + 9 * CELL_SIZE), 2
-        )
+                pygame.draw.line(self.screen, BLACK_COLOR, (x, y0), (x, y0 + 4 * CELL_SIZE), 2)
+                pygame.draw.line(self.screen, BLACK_COLOR, (x, y0 + 5 * CELL_SIZE), (x, y1), 2)
+
+        # Cung tướng trên
+        pygame.draw.line(self.screen, BLACK_COLOR,
+                         (x0 + 3 * CELL_SIZE, y0),
+                         (x0 + 5 * CELL_SIZE, y0 + 2 * CELL_SIZE), 2)
+        pygame.draw.line(self.screen, BLACK_COLOR,
+                         (x0 + 5 * CELL_SIZE, y0),
+                         (x0 + 3 * CELL_SIZE, y0 + 2 * CELL_SIZE), 2)
+
+        # Cung tướng dưới
+        pygame.draw.line(self.screen, BLACK_COLOR,
+                         (x0 + 3 * CELL_SIZE, y0 + 7 * CELL_SIZE),
+                         (x0 + 5 * CELL_SIZE, y0 + 9 * CELL_SIZE), 2)
+        pygame.draw.line(self.screen, BLACK_COLOR,
+                         (x0 + 5 * CELL_SIZE, y0 + 7 * CELL_SIZE),
+                         (x0 + 3 * CELL_SIZE, y0 + 9 * CELL_SIZE), 2)
+
+    def draw_selected_piece(self, selected_piece):
+        if selected_piece is None:
+            return
+
+        row, col = selected_piece
+        x = BOARD_OFFSET_X + col * CELL_SIZE
+        y = BOARD_OFFSET_Y + row * CELL_SIZE
+
+        pygame.draw.circle(self.screen, SELECT_COLOR, (x, y), 30, 4)
+
+    def draw_valid_moves(self, moves):
+        for move in moves:
+            x = BOARD_OFFSET_X + move.end_col * CELL_SIZE
+            y = BOARD_OFFSET_Y + move.end_row * CELL_SIZE
+            pygame.draw.circle(self.screen, VALID_MOVE_COLOR, (x, y), 10)
 
     def draw_piece(self, piece):
         x = BOARD_OFFSET_X + piece.col * CELL_SIZE
@@ -91,8 +84,10 @@ class Renderer:
         for piece in pieces:
             self.draw_piece(piece)
 
-    def render(self, pieces):
+    def render(self, pieces, valid_moves=None, selected_piece=None):
         self.draw_background()
         self.draw_board()
+        self.draw_selected_piece(selected_piece)
+        self.draw_valid_moves(valid_moves or [])
         self.draw_pieces(pieces)
         pygame.display.flip()

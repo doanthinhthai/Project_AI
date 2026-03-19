@@ -1,8 +1,9 @@
 import pygame
-from core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN, FPS
+from core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN, FPS, BOARD_OFFSET_X, BOARD_OFFSET_Y, CELL_SIZE
 from ui.renderer import Renderer
 from game.board import Board
-from game.rules import Rules
+from game.game_manager import GameManager
+
 
 def main():
     pygame.init()
@@ -13,14 +14,9 @@ def main():
 
     clock = pygame.time.Clock()
     renderer = Renderer(screen)
+
     board = Board()
-    
-    board = Board()
-    rules = Rules(board)
-    
-    test_moves = rules.get_valid_moves(9, 1)  # thử quân Mã đỏ
-    for move in test_moves:
-        print(move)
+    game_manager = GameManager(board)
 
     running = True
     while running:
@@ -28,16 +24,28 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
 
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                game_manager.handle_mouse_click(
+                    mouse_x,
+                    mouse_y,
+                    BOARD_OFFSET_X,
+                    BOARD_OFFSET_Y,
+                    CELL_SIZE
+                )
+
         pieces = board.get_all_pieces()
-        renderer.render(pieces)
+        valid_moves = game_manager.get_valid_moves()
+        selected_piece = game_manager.get_selected_piece()
+
+        renderer.render(pieces, valid_moves, selected_piece)
         clock.tick(FPS)
 
     pygame.quit()
-    
 
 
 if __name__ == "__main__":
