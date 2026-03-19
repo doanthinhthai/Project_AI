@@ -2,7 +2,7 @@ import pygame
 from core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN, FPS
 from ui.renderer import Renderer
 from game.board import Board
-
+from game.rules import Rules
 
 def main():
     pygame.init()
@@ -14,6 +14,13 @@ def main():
     clock = pygame.time.Clock()
     renderer = Renderer(screen)
     board = Board()
+    
+    board = Board()
+    rules = Rules(board)
+    
+    test_moves = rules.get_valid_moves(9, 1)  # thử quân Mã đỏ
+    for move in test_moves:
+        print(move)
 
     running = True
     while running:
@@ -30,6 +37,7 @@ def main():
         clock.tick(FPS)
 
     pygame.quit()
+    
 
 
 if __name__ == "__main__":
