@@ -1,7 +1,7 @@
 from core.constants import (
     RED, BLACK, EMPTY, KING,
     BOARD_ROWS, BOARD_COLS,
-    RED_WIN, BLACK_WIN, ONGOING
+    RED_WIN, BLACK_WIN, ONGOING, DRAW
 )
 from game.rules import Rules
 
@@ -16,7 +16,7 @@ class GameManager:
         self.selected_piece = None
         self.valid_moves = []
         self.game_state = ONGOING
-        self.status_message = "Lượt của: ĐỎ"
+        self.status_message = "Turn: RED"
 
     def reset_selection(self):
         self.selected_piece = None
@@ -24,14 +24,16 @@ class GameManager:
 
     def switch_turn(self):
         self.current_turn = BLACK if self.current_turn == RED else RED
-        turn_text = "ĐỎ" if self.current_turn == RED else "ĐEN"
-        self.status_message = f"Lượt của: {turn_text}"
+        turn_text = "RED" if self.current_turn == RED else "BLACK"
+        self.status_message = f"Turn: {turn_text}"
 
     def get_status_text(self):
         if self.game_state == RED_WIN:
-            return "ĐỎ THẮNG!"
+            return "RED WIN!"
         elif self.game_state == BLACK_WIN:
-            return "ĐEN THẮNG!"
+            return "BLACK WIN!"
+        elif self.game_state == DRAW:
+            return "DRAW!"
         return self.status_message
 
     def undo_last_move(self):
@@ -40,7 +42,7 @@ class GameManager:
                 self.board.undo_move()
                 self.board.undo_move()
                 self.current_turn = RED
-                self.status_message = "Lượt của: ĐỎ"
+                self.status_message = "Turn: RED"
         else:
             if len(self.board.move_log) >= 1:
                 self.board.undo_move()
@@ -69,7 +71,7 @@ class GameManager:
                 break
 
         if king_pos is None:
-            return False
+            return True
 
         enemy_color = -color
         for r in range(BOARD_ROWS):
@@ -127,7 +129,20 @@ class GameManager:
 
         return legal_moves
 
-    def check_game_over(self):
+    def has_any_legal_move(self, color):
+        for row in range(BOARD_ROWS):
+            for col in range(BOARD_COLS):
+                piece = self.board.get_piece(row, col)
+                if piece != EMPTY and piece.color == color:
+                    legal_moves = self.get_legal_moves(row, col)
+                    if legal_moves:
+                        return True
+        return False
+
+    def check_game_over(self, color_to_move=None):
+        if color_to_move is None:
+            color_to_move = self.current_turn
+
         king_red = False
         king_black = False
 
@@ -140,8 +155,18 @@ class GameManager:
 
         if not king_red:
             self.game_state = BLACK_WIN
+            return
         elif not king_black:
             self.game_state = RED_WIN
+            return
+
+        if not self.has_any_legal_move(color_to_move):
+            if self.is_in_check(color_to_move) or self.kings_face_each_other():
+                self.game_state = BLACK_WIN if color_to_move == RED else RED_WIN
+            else:
+                self.game_state = DRAW
+        else:
+            self.game_state = ONGOING
 
     def handle_ai_turn(self):
         if self.ai_engine is None or self.game_state != ONGOING:
@@ -150,7 +175,10 @@ class GameManager:
         ai_move = self.ai_engine.get_best_move(self.board)
         if ai_move:
             self.board.make_move(ai_move)
-            self.check_game_over()
+
+            next_turn = BLACK if self.current_turn == RED else RED
+            self.check_game_over(next_turn)
+
             if self.game_state == ONGOING:
                 self.switch_turn()
 
@@ -178,7 +206,10 @@ class GameManager:
 
         if chosen_move:
             self.board.make_move(chosen_move)
-            self.check_game_over()
+
+            next_turn = BLACK if self.current_turn == RED else RED
+            self.check_game_over(next_turn)
+
             self.reset_selection()
 
             if self.game_state == ONGOING:
@@ -192,6 +223,7 @@ class GameManager:
             self.valid_moves = self.get_legal_moves(row, col)
         else:
             self.reset_selection()
+
     def get_valid_moves(self):
         return self.valid_moves
 
