@@ -1,5 +1,8 @@
 import pygame
-from core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN, FPS, BOARD_OFFSET_X, BOARD_OFFSET_Y, CELL_SIZE
+from core.constants import (
+    SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN, FPS,
+    BOARD_OFFSET_X, BOARD_OFFSET_Y, CELL_SIZE
+)
 from ui.renderer import Renderer
 from game.board import Board
 from game.game_manager import GameManager

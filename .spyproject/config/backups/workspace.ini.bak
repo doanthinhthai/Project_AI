@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['main.py', 'core\\constants.py', 'core\\settings.py', 'core\\helpers.py', 'game\\piece.py', 'game\\moves.py', 'game\\board.py', 'game\\rules.py', 'game\\game_state.py', 'game\\game_manager.py', 'ui\\renderer.py', 'ui\\input_handler.py', 'ui\\menu.py', 'ui\\button.py', 'ui\\hud.py', 'ai\\evaluation.py', 'ai\\move_generator.py', 'ai\\minimax.py', 'ai\\alpha_beta.py', 'ai\\ai_player.py', 'tests\\test_board.py', 'tests\\test_rules.py', 'tests\\test_ai.py']
+recent_files = ['main.py', 'core\\constants.py', 'core\\settings.py', 'core\\helpers.py', 'game\\piece.py', 'game\\moves.py', 'game\\board.py', 'game\\rules.py', 'game\\game_state.py', 'game\\game_manager.py', 'ui\\renderer.py', 'ui\\input_handler.py', 'ui\\menu.py', 'ui\\button.py', 'ui\\hud.py', 'ai\\evaluation.py', 'ai\\move_generator.py']
 
 [main]
 version = 0.2.0
