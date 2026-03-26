@@ -25,7 +25,7 @@ class MoveGenerator:
                 for move in candidate_moves:
                     self.board.make_move(move)
 
-                    # ❗ Lọc nước đi không hợp lệ
+                    #Lọc nước đi không hợp lệ
                     if not self.is_illegal_move(color):
                         moves.append(move)
 
