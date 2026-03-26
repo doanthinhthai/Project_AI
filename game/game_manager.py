@@ -172,7 +172,7 @@ class GameManager:
         if self.ai_engine is None or self.game_state != ONGOING:
             return
 
-        ai_move = self.ai_engine.get_best_move(self.board)
+        ai_move = self.ai_engine.get_best_move(self.board, self.current_turn)
         if ai_move:
             self.board.make_move(ai_move)
 
