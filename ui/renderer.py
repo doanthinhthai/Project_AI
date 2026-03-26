@@ -19,6 +19,7 @@ class Renderer:
         self.font = pygame.font.SysFont("arial", 28, bold=True)
         self.small_font = pygame.font.SysFont("arial", 22)
         self.big_font = pygame.font.SysFont("arial", 40, bold=True)
+        self.tiny_font = pygame.font.SysFont("arial", 18, italic=True)
     
         panel_x = SCREEN_WIDTH - PANEL_WIDTH
         button_x = panel_x + (PANEL_WIDTH - BUTTON_WIDTH) // 2
@@ -138,6 +139,18 @@ class Renderer:
     
         self.draw_button(self.undo_button_rect, "Undo", BUTTON_BG)
         self.draw_button(self.reset_button_rect, "Reset", BUTTON_BG_2)
+        
+        pygame.draw.line(
+            self.screen,
+            BLACK_COLOR,
+            (panel_x + 20, SCREEN_HEIGHT - 75),
+            (SCREEN_WIDTH - 20, SCREEN_HEIGHT - 75),
+            1
+        )
+        
+        creator_text = self.tiny_font.render("Made by Thinh & Sang", True, TEXT_COLOR)
+        creator_rect = creator_text.get_rect(center=(panel_x + PANEL_WIDTH // 2, SCREEN_HEIGHT - 35))
+        self.screen.blit(creator_text, creator_rect)
 
     def draw_game_over_overlay(self, status_text):
         if ("THẮNG" not in status_text) and ("HÒA" not in status_text):
