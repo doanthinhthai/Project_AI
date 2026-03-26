@@ -180,3 +180,10 @@ class Renderer:
         self.draw_side_panel(status_text)
         self.draw_game_over_overlay(status_text)
         pygame.display.flip()
+        
+    def draw_piece(self, piece):
+        x = BOARD_OFFSET_X + piece.col * CELL_SIZE
+        y = BOARD_OFFSET_Y + piece.row * CELL_SIZE
+    
+        rect = piece.image.get_rect(center=(x, y))
+        self.screen.blit(piece.image, rect)

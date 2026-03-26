@@ -84,3 +84,25 @@ BUTTON_BG_2 = (60, 170, 90)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 
 OVERLAY_COLOR = (0, 0, 0, 100)
+
+ASSET_FOLDER = "assets/images/"
+
+RED_PIECE_IMAGES = {
+    KING: ASSET_FOLDER + "red_king.png",
+    ROOK: ASSET_FOLDER + "red_rook.png",
+    KNIGHT: ASSET_FOLDER + "red_knight.png",
+    CANNON: ASSET_FOLDER + "red_cannon.png",
+    ADVISOR: ASSET_FOLDER + "red_advisor.png",
+    ELEPHANT: ASSET_FOLDER + "red_elephant.png",
+    PAWN: ASSET_FOLDER + "red_pawn.png",
+}
+
+BLACK_PIECE_IMAGES = {
+    KING: ASSET_FOLDER + "black_king.png",
+    ROOK: ASSET_FOLDER + "black_rook.png",
+    KNIGHT: ASSET_FOLDER + "black_knight.png",
+    CANNON: ASSET_FOLDER + "black_cannon.png",
+    ADVISOR: ASSET_FOLDER + "black_advisor.png",
+    ELEPHANT: ASSET_FOLDER + "black_elephant.png",
+    PAWN: ASSET_FOLDER + "black_pawn.png",
+}
