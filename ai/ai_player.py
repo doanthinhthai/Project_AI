@@ -1,3 +1,4 @@
+import time
 from game.rules import Rules
 from ai.move_generator import MoveGenerator
 from ai.minimax import Minimax
@@ -10,6 +11,9 @@ class AIPlayer:
         self.game_manager = game_manager
         self.rules = Rules(board)
         self.move_generator = MoveGenerator(board, self.rules, game_manager)
+        self.algorithm = algorithm
+        self.max_depth = max_depth
+        self.last_think_time = 0.0
 
         if algorithm == "minimax":
             self.engine = Minimax(self.move_generator, max_depth=max_depth)
@@ -17,4 +21,8 @@ class AIPlayer:
             self.engine = AlphaBeta(self.move_generator, max_depth=max_depth)
 
     def get_best_move(self, board, color):
-        return self.engine.get_best_move(board, color)
+        start = time.perf_counter()
+        move = self.engine.get_best_move(board, color)
+        end = time.perf_counter()
+        self.last_think_time = end - start
+        return move
