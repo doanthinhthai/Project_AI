@@ -1,6 +1,6 @@
 import random
 from core.constants import RED, BLACK, EMPTY, PIECE_VALUES
-from ai.evaluation import Evaluation
+from ai.evaluation.evaluation import Evaluation
 
 
 class Minimax:
@@ -63,7 +63,7 @@ class Minimax:
         if not moves:
             return Evaluation.evaluate(board, self.move_generator.game_manager)
 
-        tt_move = tt_entry["best_move"] if tt_entry is not None else None
+        tt_move = self._get_tt_move(board, color)
         moves = self._order_moves(board, moves, color, tt_move=tt_move)
 
         if color == RED:
@@ -188,10 +188,12 @@ class Minimax:
     def _probe_tt(self, board, color, depth):
         key = self._board_key(board, color)
         entry = self.tt.get(key)
+
         if entry is None:
             return None
         if entry["depth"] < depth:
             return None
+
         return entry
 
     def _store_tt(self, board, color, depth, score, best_move):
@@ -208,6 +210,8 @@ class Minimax:
     def _get_tt_move(self, board, color):
         key = self._board_key(board, color)
         entry = self.tt.get(key)
+
         if entry is None:
             return None
+
         return entry.get("best_move")
