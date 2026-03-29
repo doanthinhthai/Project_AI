@@ -349,7 +349,6 @@ class FeatureExtractor:
         return {
             "material": FeatureExtractor.extract_material(board),
             "pst": FeatureExtractor.extract_pst(board),
-            "mobility": FeatureExtractor.extract_mobility(board),
             "king_safety": FeatureExtractor.extract_king_safety(board),
             "pawn_structure": FeatureExtractor.extract_pawn_structure(board),
         }
