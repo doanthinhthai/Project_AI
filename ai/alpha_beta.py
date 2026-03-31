@@ -68,9 +68,7 @@ class AlphaBeta:
         # Search stack: list of hash (path hiện tại đang tìm)
         self.search_stack: list = []
 
-    # =========================================================================
     # PUBLIC
-    # =========================================================================
 
     def set_history(self, history):
         self.game_history = [hash(h) for h in history]
@@ -174,9 +172,7 @@ class AlphaBeta:
 
         return best_move
 
-    # =========================================================================
     # NEGAMAX SEARCH
-    # =========================================================================
 
     def _search(self, board, current_hash, depth, alpha, beta, color, ply):
         # ── Repetition check (dùng hash, O(1) cho game_history) ─────────────
@@ -296,9 +292,7 @@ class AlphaBeta:
         self._store_tt(current_hash, depth, best_score, flag, best_move)
         return best_score
 
-    # =========================================================================
     # QUIESCENCE
-    # =========================================================================
 
     def _quiescence(self, board, current_hash, alpha, beta, color, ply):
         if self._time_up():
@@ -334,9 +328,7 @@ class AlphaBeta:
 
         return alpha
 
-    # =========================================================================
     # ZOBRIST INCREMENTAL UPDATE
-    # =========================================================================
 
     def _move_hash(self, old_hash: int, board, move, color: int) -> int:
         """
@@ -362,9 +354,7 @@ class AlphaBeta:
 
         return h
 
-    # =========================================================================
     # MOVE ORDERING
-    # =========================================================================
 
     def _order_moves(self, board, moves, color, ply, tt_move):
         killers = self.killer_moves.get(ply, [])
@@ -395,9 +385,7 @@ class AlphaBeta:
 
         return sorted(moves, key=score, reverse=True)
 
-    # =========================================================================
     # HELPERS
-    # =========================================================================
 
     def _eval_rel(self, board, color):
         raw = Evaluation.evaluate(board, self.move_generator.game_manager)
@@ -423,7 +411,7 @@ class AlphaBeta:
         hk = (color, move.piece_moved.piece_type, move.end_row, move.end_col)
         self.history_table[hk] = self.history_table.get(hk, 0) + depth * depth
 
-    # ── TT ────────────────────────────────────────────────────────────────────
+    #TT
 
     def _store_tt(self, h, depth, score, flag, best_move):
         existing = self.tt.get(h)
@@ -444,7 +432,7 @@ class AlphaBeta:
         e = self.tt.get(h)
         return e["best_move"] if e is not None else None
 
-    # ── Time ──────────────────────────────────────────────────────────────────
+    #Time
 
     def _time_up(self):
         return (time.perf_counter() - self.start_time) >= self.time_limit

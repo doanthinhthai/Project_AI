@@ -7,10 +7,8 @@ class MoveGenerator:
         self.rules = rules
         self.game_manager = game_manager
 
-    def get_all_moves(self, color):
-        """
-        Trả về tất cả nước đi hợp lệ (legal moves) của một bên.
-        """
+    #Trả về tất cả nước đi hợp lệ (legal moves) của một bên.
+    def get_all_moves(self, color):             
         moves = []
 
         for row in range(BOARD_ROWS):
@@ -33,12 +31,8 @@ class MoveGenerator:
 
         return moves
 
+    # Kiểm tra nước đi có vi phạm luật không:
     def is_illegal_move(self, color):
-        """
-        Kiểm tra nước đi có vi phạm luật không:
-        - tự chiếu
-        - hai tướng đối mặt
-        """
         if self.game_manager is not None:
             if self.game_manager.is_in_check(color):
                 return True

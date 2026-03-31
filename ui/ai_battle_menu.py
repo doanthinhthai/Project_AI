@@ -1,6 +1,4 @@
-"""
-ai_battle_menu.py — Màn hình cài đặt AI vs AI
-"""
+
 import pygame
 from ui.button import Button
 from core.constants import *
@@ -25,15 +23,15 @@ class AIBattleMenu:
         rx = cx + 30    # right column x
         cw = 210        # column width
 
-        # ── RED column ────────────────────────────────────────────────────────
+        #RED column
         self.red_algo_btn  = Button(lx, 240, cw, 46, "", BUTTON_BG,   BUTTON_TEXT_COLOR, BUTTON_BG_HOVER)
         self.red_diff_btn  = Button(lx, 298, cw, 46, "", BUTTON_BG_3, BUTTON_TEXT_COLOR, BUTTON_BG_3_HOV)
 
-        # ── BLACK column ──────────────────────────────────────────────────────
+        #BLACK column
         self.blk_algo_btn  = Button(rx, 240, cw, 46, "", BUTTON_BG,   BUTTON_TEXT_COLOR, BUTTON_BG_HOVER)
         self.blk_diff_btn  = Button(rx, 298, cw, 46, "", BUTTON_BG_3, BUTTON_TEXT_COLOR, BUTTON_BG_3_HOV)
 
-        # ── Action ────────────────────────────────────────────────────────────
+        #Action
         self.start_btn = Button(cx - 130, 420, 260, 54, "Start Match",
                                  BUTTON_BG_2, BUTTON_TEXT_COLOR, BUTTON_BG_2_HOV, icon="▶")
         self.back_btn  = Button(cx - 130, 490, 260, 46, "Back to Menu",

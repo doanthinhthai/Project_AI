@@ -41,14 +41,10 @@ class GameManager:
         self.animation_end_pos = (0, 0)
         self.animation_hide_piece = None
 
-        # ── Lịch sử board để phát hiện lặp nước ──────────────────────────────
-        # Dùng LIST (không phải set) để đếm số lần xuất hiện chính xác.
-        # Mỗi phần tử là string hash của trạng thái board.
+        
         self.board_history: list = []
 
-    # =========================================================================
     # SELECTION & TURN
-    # =========================================================================
 
     def reset_selection(self):
         self.selected_piece = None
@@ -65,9 +61,7 @@ class GameManager:
         if self.game_state == DRAW:      return "DRAW!"
         return self.status_message
 
-    # =========================================================================
     # GAME START / RESET
-    # =========================================================================
 
     def reset_board_only(self):
         self.board.reset_board()
@@ -124,9 +118,7 @@ class GameManager:
         self.paused = False
         self.animating = False
 
-    # =========================================================================
     # BOARD HASH & HISTORY
-    # =========================================================================
 
     def get_board_hash(self) -> str:
         """String hash nhẹ của trạng thái bàn cờ + lượt đi."""
@@ -148,9 +140,7 @@ class GameManager:
         current = self.get_board_hash()
         return self.board_history.count(current) >= 3
 
-    # =========================================================================
     # AI
-    # =========================================================================
 
     def get_current_ai(self):
         return self.red_ai if self.current_turn == RED else self.black_ai
@@ -158,9 +148,7 @@ class GameManager:
     def is_human_turn(self):
         return self.get_current_ai() is None
 
-    # =========================================================================
     # LEGAL MOVES & CHECK
-    # =========================================================================
 
     def is_in_check(self, color):
         king_pos = None
@@ -225,9 +213,7 @@ class GameManager:
                     return True
         return False
 
-    # =========================================================================
     # GAME OVER CHECK
-    # =========================================================================
 
     def check_game_over(self, color_to_move=None):
         if color_to_move is None:
@@ -265,10 +251,7 @@ class GameManager:
         else:
             self.game_state = ONGOING
 
-    # =========================================================================
     # UNDO
-    # =========================================================================
-
     def undo_last_move(self):
         if self.animating:
             return
@@ -305,10 +288,7 @@ class GameManager:
         self.game_state = ONGOING
         self.ai_move_pending_time = pygame.time.get_ticks()
 
-    # =========================================================================
     # MOUSE / CLICK
-    # =========================================================================
-
     def get_clicked_square(self, mx, my, ox, oy, cs):
         col = round((mx - ox) / cs)
         row = round((my - oy) / cs)
@@ -348,10 +328,7 @@ class GameManager:
         else:
             self.reset_selection()
 
-    # =========================================================================
     # ANIMATION
-    # =========================================================================
-
     def start_move_animation(self, move):
         piece = self.board.get_piece(move.start_row, move.start_col)
         if piece == EMPTY:
@@ -403,10 +380,7 @@ class GameManager:
             "target_col": ec,
         }
 
-    # =========================================================================
     # AI TURN
-    # =========================================================================
-
     def perform_ai_turn(self):
         if self.paused or self.animating or self.game_state != ONGOING:
             return
@@ -422,10 +396,8 @@ class GameManager:
                                    self.board_history)
         if ai_move:
             self.start_move_animation(ai_move)
-
-    # =========================================================================
+            
     # UPDATE LOOP
-    # =========================================================================
 
     def update(self):
         self.update_animation()
@@ -435,9 +407,7 @@ class GameManager:
             if not self.is_human_turn():
                 self.perform_ai_turn()
 
-    # =========================================================================
     # PAUSE / MISC
-    # =========================================================================
 
     def toggle_pause(self):
         if self.game_mode == AIVAI_MODE:

@@ -103,20 +103,20 @@ def main():
                     elif event.key == pygame.K_r:      gm.reset_board_only()
                     elif event.key == pygame.K_SPACE:  gm.toggle_pause()
 
-                # ── Control panel ──────────────────────────────────────────
+                #Control panel
                 cp = ctrl.handle_event(event, mp)
                 if cp:
                     if cp.get("action") == "new_game": _apply_new_game()
                     elif cp.get("action") == "undo":   gm.undo_last_move()
 
-                # ── HUD ───────────────────────────────────────────────────
+                #HUD
                 ha = hud.handle_event(event, gm)
                 if ha == "undo":    gm.undo_last_move()
                 elif ha == "reset": gm.reset_board_only()
                 elif ha == "pause": gm.toggle_pause()
                 elif ha == "menu":  gm.back_to_menu()
 
-                # ── Board click ───────────────────────────────────────────
+                #Board click
                 board_oy = _oy()
                 if (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
                         and mp[0] < BOARD_AREA_WIDTH
@@ -126,7 +126,7 @@ def main():
 
         gm.update()
 
-        # ── Draw ──────────────────────────────────────────────────────────────
+        #Draw
         if gm.app_state == MENU_STATE:
             menu.draw(screen); pygame.display.flip()
 
@@ -151,16 +151,14 @@ def main():
 
             renderer.draw_footer()
 
-            # 2. Vẽ HUD (bên phải)
             hud.draw(screen, gm)
 
-            # 3. Vẽ Control Panel (trên bàn cờ, đè lên background)
+            #Control Panel (trên bàn cờ, đè lên background)
             ctrl.draw(screen, mp, gm)
 
-            # 4. Overlay game over
+            #Overlay game over
             renderer.draw_game_over_overlay(gm.game_state)
 
-            # 5. Flip một lần duy nhất
             pygame.display.flip()
 
         clock.tick(FPS)

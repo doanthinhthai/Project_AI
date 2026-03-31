@@ -1,6 +1,4 @@
-"""
-menu.py — Main menu với theme lacquer đỏ-vàng
-"""
+
 import pygame
 from ui.button import Button
 from core.constants import *

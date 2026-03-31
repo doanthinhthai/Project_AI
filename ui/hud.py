@@ -25,8 +25,7 @@ class HUD:
         self.menu_btn  = Button(px, MENU_BUTTON_Y,  BUTTON_WIDTH, BUTTON_HEIGHT,
                                  "Main Menu",  BUTTON_BG_4, BUTTON_TEXT_COLOR, BUTTON_BG_4_HOV,  icon="🏠")
 
-    # ── helpers ───────────────────────────────────────────────────────────────
-
+    #helpers
     def _draw_section(self, screen, px, y, title, lines, title_color=None):
         tc = title_color or (200, 165, 80)
         tl = self.title_font.render(title, True, tc)
@@ -53,7 +52,7 @@ class HUD:
             screen.blit(lbl, (px + 18, y)); y += 18
         return y + 4
 
-    # ── main draw ─────────────────────────────────────────────────────────────
+    #main draw
 
     def draw(self, screen, game_manager):
         px = BOARD_AREA_WIDTH
@@ -73,7 +72,7 @@ class HUD:
             s.fill((200, 148, 40, alpha))
             screen.blit(s, (px + xi, 0))
 
-        # ── Header ────────────────────────────────────────────────────────────
+        #Header
         hdr = pygame.Surface((PANEL_WIDTH, 58), pygame.SRCALPHA)
         pygame.draw.rect(hdr, (0, 0, 0, 60), (0, 0, PANEL_WIDTH, 58))
         screen.blit(hdr, (px, 0))
@@ -86,7 +85,7 @@ class HUD:
 
         y = 70
 
-        # ── Game Info section ─────────────────────────────────────────────────
+        #Game Info section
         gm = game_manager
         mode_map = {PVP_MODE: "Player vs Player",
                     PVAI_MODE: "Player vs AI",
@@ -129,7 +128,7 @@ class HUD:
                          (px+12, y), (px+PANEL_WIDTH-12, y), 1)
         y += 8
 
-        # ── AI info ───────────────────────────────────────────────────────────
+        #AI info
         if gm.red_ai or gm.black_ai:
             ai_lines = []
             if gm.red_ai:
@@ -145,12 +144,12 @@ class HUD:
                              (px+12, y-4), (px+PANEL_WIDTH-12, y-4), 1)
             y += 4
 
-        # ── Move log ──────────────────────────────────────────────────────────
+        #Move log
         y = self._draw_move_log(screen, px, y, gm.board.move_log)
         pygame.draw.line(screen, (80, 55, 20),
                          (px+12, y), (px+PANEL_WIDTH-12, y), 1)
 
-        # ── Buttons ───────────────────────────────────────────────────────────
+        #buttons
         mouse_pos = pygame.mouse.get_pos()
         self.undo_btn.update_hover(mouse_pos)
         self.reset_btn.update_hover(mouse_pos)
@@ -166,7 +165,7 @@ class HUD:
         self.reset_btn.draw(screen, self.button_font)
         self.menu_btn.draw(screen, self.button_font)
 
-        # ── Footer ────────────────────────────────────────────────────────────
+        #Footer
         footer = self.small_font.render("Made by Vu Nam Sang & Thai Doan Thinh",
                                          True, (80, 62, 35))
         screen.blit(footer, footer.get_rect(center=(px + PANEL_WIDTH//2, SCREEN_HEIGHT - 18)))

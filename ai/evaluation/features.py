@@ -1,14 +1,14 @@
+from collections import Counter
+
 from core.constants import (
     RED, BLACK, EMPTY,
     KING, ADVISOR, ELEPHANT, ROOK, KNIGHT, CANNON, PAWN,
     PIECE_VALUES
 )
 
-# =============================================================================
 # PIECE-SQUARE TABLES (PST)
 # Góc nhìn từ phía ĐỎ (hàng 9 = hàng đầu của đỏ, hàng 0 = hàng đầu của đen)
 # Giá trị cao = vị trí tốt hơn
-# =============================================================================
 
 PST_ROOK = [
     [206, 208, 207, 213, 214, 213, 207, 208, 206],
@@ -133,23 +133,16 @@ MOBILITY_WEIGHT = {
 
 class FeatureExtractor:
 
-    # =========================================================================
     # HELPERS
-    # =========================================================================
-
     @staticmethod
     def in_bounds(r, c):
         return 0 <= r < 10 and 0 <= c < 9
 
     @staticmethod
     def normalize_row(piece, row):
-        """Chuẩn hoá hàng về góc nhìn của quân đỏ (hàng 9 = hàng nhà)."""
         return row if piece.color == RED else 9 - row
 
-    # =========================================================================
     # PIECE CONTROL (không đổi logic, giữ nguyên)
-    # =========================================================================
-
     @staticmethod
     def rook_control(board, row, col):
         squares = []
@@ -271,10 +264,7 @@ class FeatureExtractor:
         if p == ELEPHANT: return FeatureExtractor.elephant_control(board, piece, row, col)
         return []
 
-    # =========================================================================
-    # FEATURE 1: MATERIAL — không thay đổi, đã tốt
-    # =========================================================================
-
+    # FEATURE 1: MATERIAL
     @staticmethod
     def extract_material(board):
         red_score = 0
@@ -291,10 +281,7 @@ class FeatureExtractor:
                     black_score += value
         return red_score - black_score
 
-    # =========================================================================
-    # FEATURE 2: PST — dùng bảng lookup thay vì công thức
-    # =========================================================================
-
+    # FEATURE 2: PST
     @staticmethod
     def extract_pst(board):
         """
@@ -325,9 +312,7 @@ class FeatureExtractor:
 
         return red_score - black_score
 
-    # =========================================================================
-    # FEATURE 3: MOBILITY — đã có nhưng chưa được gọi, sửa trọng số
-    # =========================================================================
+    # FEATURE 3: MOBILITY
 
     @staticmethod
     def extract_mobility(board):
@@ -355,225 +340,243 @@ class FeatureExtractor:
 
         return red_score - black_score
 
-    # =========================================================================
-    # FEATURE 4: PAWN STRUCTURE — bỏ phần trùng với PST
-    # =========================================================================
-
+    # FEATURE 4: PAWN STRUCTURE
     @staticmethod
     def extract_pawn_structure(board):
-        """
-        Chỉ đánh giá cấu trúc tốt thuần túy:
-        - Phạt tốt chồng cột (doubled pawns)
-        - Thưởng tốt liên kết (connected pawns — cùng hàng, kề cột)
-        PST đã lo bonus vị trí, không tính lại ở đây.
-        """
-        red_score = 0
-        black_score = 0
-
-        red_pawns   = []  # list (row, col)
+        red_pawns = []
         black_pawns = []
-
+    
+        # Gom toàn bộ vị trí tốt của hai bên
         for r in range(10):
             for c in range(9):
                 piece = board.board[r][c]
                 if piece == EMPTY or piece.piece_type != PAWN:
                     continue
+    
                 if piece.color == RED:
                     red_pawns.append((r, c))
                 else:
                     black_pawns.append((r, c))
-
-        def evaluate_pawns(pawns, color):
+    
+        def has_crossed_river(color, row):
+            if color == RED:
+                return row <= 4
+            return row >= 5
+    
+        def forward_progress(color, row):
+            return 9 - row if color == RED else row
+    
+        def evaluate_pawns(pawns, enemy_pawns, color):
             score = 0
-            # Doubled pawn penalty
-            from collections import Counter
+    
+            if not pawns:
+                return 0
+    
+            pawn_cols = set(c for _, c in pawns)
+            enemy_pawn_set = set(enemy_pawns)
+    
+            #Hai tốt cùng 1 cột penalty
             col_count = Counter(c for _, c in pawns)
             for count in col_count.values():
                 if count > 1:
                     score -= (count - 1) * 10
-
-            # Connected pawn bonus: 2 tốt cùng hàng, cột kề nhau
-            crossed = [
-                (r, c) for r, c in pawns
-                if (color == RED and r <= 4) or (color == BLACK and r >= 5)
-            ]
+    
+            #tốt qua sông - bonus
+            crossed = [(r, c) for r, c in pawns if has_crossed_river(color, r)]
             crossed_set = set(crossed)
+    
             for r, c in crossed:
-                if (r, c - 1) in crossed_set or (r, c + 1) in crossed_set:
+                if (r, c + 1) in crossed_set:
                     score += 15
-
+    
+            #tốt bị cô lập - penalty
+            for r, c in pawns:
+                has_adjacent_file_support = (c - 1 in pawn_cols) or (c + 1 in pawn_cols)
+                if not has_adjacent_file_support:
+                    score -= 12
+    
+            #Càng sâu càng nguy hiểm
+            for r, c in pawns:
+                if has_crossed_river(color, r):
+                    score += forward_progress(color, r) * 2
+    
+            #Nếu phía trước trên cùng cột không còn tốt địch
+            for r, c in pawns:
+                enemy_pawn_ahead = False
+    
+                if color == RED:
+                    for rr in range(r - 1, -1, -1):
+                        if (rr, c) in enemy_pawn_set:
+                            enemy_pawn_ahead = True
+                            break
+                else:
+                    for rr in range(r + 1, 10):
+                        if (rr, c) in enemy_pawn_set:
+                            enemy_pawn_ahead = True
+                            break
+    
+                if not enemy_pawn_ahead:
+                    score += 18
+    
             return score
-
-        red_score   = evaluate_pawns(red_pawns,   RED)
-        black_score = evaluate_pawns(black_pawns, BLACK)
-
+    
+        red_score = evaluate_pawns(red_pawns, black_pawns, RED)
+        black_score = evaluate_pawns(black_pawns, red_pawns, BLACK)
+    
         return red_score - black_score
 
-    # =========================================================================
-    # FEATURE 5: KING SAFETY — nâng cấp toàn diện
-    # =========================================================================
+    # FEATURE 5: KING SAFETY
 
     @staticmethod
+    @staticmethod
     def extract_king_safety(board):
-        """
-        Đánh giá an toàn vua gồm:
-        1. Số sĩ/tượng còn lại
-        2. Sĩ ở vị trí lý tưởng
-        3. Vua ở giữa cung (cột 4)
-        4. Phạt nặng nếu vua ra ngoài cung (lỗi logic game)
-        5. Phạt vùng xung quanh vua bị tấn công bởi quân địch
-        """
-        red_king_pos   = None
+        red_king_pos = None
         black_king_pos = None
-        red_guard      = 0
-        black_guard    = 0
-        red_advisor_positions   = []
+        red_guard = 0
+        black_guard = 0
+        red_advisor_positions = []
         black_advisor_positions = []
-
+    
+        # Cache toàn bộ quân để không phải quét board lần 2
+        pieces_info = []   # list[(piece, r, c)]
+    
+        # Scan board đúng 1 lần
         for r in range(10):
             for c in range(9):
                 piece = board.board[r][c]
                 if piece == EMPTY:
                     continue
-
+    
+                pieces_info.append((piece, r, c))
+    
                 if piece.piece_type == KING:
                     if piece.color == RED:
                         red_king_pos = (r, c)
                     else:
                         black_king_pos = (r, c)
-
+    
                 if piece.piece_type in (ADVISOR, ELEPHANT):
                     if piece.color == RED:
                         red_guard += 1
                     else:
                         black_guard += 1
-
+    
                 if piece.piece_type == ADVISOR:
                     if piece.color == RED:
                         red_advisor_positions.append((r, c))
                     else:
                         black_advisor_positions.append((r, c))
-
-        red_score   = red_guard   * 12
+    
+        red_score = red_guard * 12
         black_score = black_guard * 12
-
+    
         # Sĩ ở vị trí lý tưởng
         for pos in red_advisor_positions:
             if pos in RED_ADVISOR_IDEAL:
                 red_score += 10
+    
         for pos in black_advisor_positions:
             if pos in BLACK_ADVISOR_IDEAL:
                 black_score += 10
-
+    
         # Vua ở giữa cung
-        if red_king_pos   and red_king_pos[1]   == 4:
-            red_score   += 8
-        if black_king_pos and black_king_pos[1] == 4:
+        if red_king_pos is not None and red_king_pos[1] == 4:
+            red_score += 8
+        if black_king_pos is not None and black_king_pos[1] == 4:
             black_score += 8
-
-        # Phạt vua ra ngoài cung (không hợp lệ trong cờ tướng)
-        if red_king_pos   and red_king_pos   not in RED_PALACE:
-            red_score   -= 200
-        if black_king_pos and black_king_pos not in BLACK_PALACE:
+    
+        # Phạt vua ra ngoài cung
+        if red_king_pos is not None and red_king_pos not in RED_PALACE:
+            red_score -= 200
+        if black_king_pos is not None and black_king_pos not in BLACK_PALACE:
             black_score -= 200
-
-        # Phạt vùng xung quanh vua bị quân địch tấn công
-        red_zone_attacked   = 0
+    
+        # Tạo zone 3x3 quanh vua, có lọc biên luôn cho sạch logic
+        red_zone = set()
+        black_zone = set()
+    
+        if red_king_pos is not None:
+            kr, kc = red_king_pos
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    nr, nc = kr + dr, kc + dc
+                    if FeatureExtractor.in_bounds(nr, nc):
+                        red_zone.add((nr, nc))
+    
+        if black_king_pos is not None:
+            kr, kc = black_king_pos
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    nr, nc = kr + dr, kc + dc
+                    if FeatureExtractor.in_bounds(nr, nc):
+                        black_zone.add((nr, nc))
+    
+        red_zone_attacked = 0
         black_zone_attacked = 0
-
-        for r in range(10):
-            for c in range(9):
-                piece = board.board[r][c]
-                if piece == EMPTY:
-                    continue
-
-                controls = FeatureExtractor.piece_control(board, piece, r, c)
-                controls_set = set(controls)
-
-                if piece.color == BLACK and red_king_pos is not None:
-                    kr, kc = red_king_pos
-                    # Đếm ô trong vùng 1 bước quanh vua đỏ bị tấn công
-                    for dr in [-1, 0, 1]:
-                        for dc in [-1, 0, 1]:
-                            if (kr + dr, kc + dc) in controls_set:
-                                red_zone_attacked += 1
-
-                if piece.color == RED and black_king_pos is not None:
-                    kr, kc = black_king_pos
-                    for dr in [-1, 0, 1]:
-                        for dc in [-1, 0, 1]:
-                            if (kr + dr, kc + dc) in controls_set:
-                                black_zone_attacked += 1
-
-        red_score   -= red_zone_attacked   * 8
+    
+        # Không quét board lần 2, chỉ duyệt danh sách quân đã cache
+        for piece, r, c in pieces_info:
+            controls = FeatureExtractor.piece_control(board, piece, r, c)
+    
+            if piece.color == BLACK and red_zone:
+                red_zone_attacked += sum(1 for sq in controls if sq in red_zone)
+    
+            elif piece.color == RED and black_zone:
+                black_zone_attacked += sum(1 for sq in controls if sq in black_zone)
+    
+        red_score -= red_zone_attacked * 8
         black_score -= black_zone_attacked * 8
-
+    
         return red_score - black_score
 
-    # =========================================================================
-    # FEATURE 6: FLYING GENERAL — hoàn toàn mới
-    # =========================================================================
-
+    # FEATURE 6: FLYING GENERAL
     @staticmethod
-    def extract_flying_general(board):
-        """
-        Phát hiện trạng thái 'phi tướng': hai vua đối mặt trực tiếp trên
-        cùng một cột mà không có quân nào chắn giữa.
-        Đây là trạng thái bất hợp lệ/cực kỳ nguy hiểm → phạt nặng.
-
-        Trả về âm nếu đỏ đang bị flying general (bất lợi cho đỏ),
-        dương nếu đen đang bị.
-        """
-        red_king_pos   = None
+    def extract_flying_general(board, side_to_move=None):
+        red_king_pos = None
         black_king_pos = None
-
+    
+        # Scan bàn 1 lần để tìm hai tướng
         for r in range(10):
             for c in range(9):
                 piece = board.board[r][c]
                 if piece == EMPTY or piece.piece_type != KING:
                     continue
+    
                 if piece.color == RED:
                     red_king_pos = (r, c)
                 else:
                     black_king_pos = (r, c)
-
+    
         if red_king_pos is None or black_king_pos is None:
             return 0
-
+    
         rr, rc = red_king_pos
         br, bc = black_king_pos
-
+    
+        # Khác cột -> không thể flying general
         if rc != bc:
-            return 0  # Khác cột → không bao giờ flying general
-
-        # Đếm quân giữa hai vua trên cùng cột
-        min_row = min(rr, br) + 1
-        max_row = max(rr, br)
-        pieces_between = 0
-        for row in range(min_row, max_row):
+            return 0
+    
+        # Kiểm tra có quân chắn giữa hai tướng không
+        start_row = min(rr, br) + 1
+        end_row = max(rr, br)
+    
+        for row in range(start_row, end_row):
             if board.board[row][rc] != EMPTY:
-                pieces_between += 1
+                return 0
+    
+        # Nếu tới đây thì hai tướng đang đối mặt trực tiếp
+        penalty = 500
+    
+        if side_to_move is None:
+            return 0
+    
+        return -penalty if side_to_move == RED else penalty
 
-        if pieces_between == 0:
-            # Hai vua đối mặt — trạng thái bất hợp lệ
-            # Phạt bên nào đang đến lượt (gây ra tình trạng này)
-            return -500
-
-        return 0
-
-    # =========================================================================
-    # FEATURE 7: THREAT DETECTION — hoàn toàn mới
-    # =========================================================================
+    # FEATURE 7: THREAT DETECTION
 
     @staticmethod
     def extract_threats(board):
-        """
-        Đánh giá các mối đe doạ trên bàn cờ:
-        - Quân bị tấn công mà không có quân bảo vệ → bị "treo"
-        - Quân giá trị cao bị tấn công bởi quân giá trị thấp → bị trao đổi bất lợi
-
-        Trả về điểm lợi thế cho đỏ (dương = đỏ lợi).
-        """
         # Tính tập hợp ô bị tấn công bởi mỗi bên
         red_attacks   = set()
         black_attacks = set()
@@ -626,19 +629,10 @@ class FeatureExtractor:
 
         return red_score - black_score
 
-    # =========================================================================
-    # FEATURE 8: GAME PHASE — hoàn toàn mới
-    # =========================================================================
+    # FEATURE 8: GAME PHASE
 
     @staticmethod
     def get_game_phase(board):
-        """
-        Trả về giá trị phase trong [0.0, 1.0]:
-        - 1.0 = khai cuộc (nhiều quân)
-        - 0.0 = tàn cuộc (ít quân)
-
-        Dùng để blend trọng số feature theo giai đoạn ván đấu.
-        """
         max_material = (
             2 * PIECE_VALUES[ROOK]   +
             2 * PIECE_VALUES[KNIGHT] +
@@ -658,9 +652,7 @@ class FeatureExtractor:
 
         return min(1.0, current_material / max_material)
 
-    # =========================================================================
-    # EXTRACT ALL — tổng hợp tất cả features
-    # =========================================================================
+    # EXTRACT ALL 
 
     @staticmethod
     def extract_all(board):

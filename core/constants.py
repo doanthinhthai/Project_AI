@@ -1,8 +1,6 @@
 import os
 
-# ══════════════════════════════════════════════════════════════════════════════
 # LOGIC CONSTANTS
-# ══════════════════════════════════════════════════════════════════════════════
 
 RED   =  1
 BLACK = -1
@@ -31,7 +29,7 @@ BLACK_PALACE_ROWS = {0, 1, 2}
 RED_FORWARD   = -1
 BLACK_FORWARD =  1
 
-# ── Game / App states ─────────────────────────────────────────────────────────
+#Game / App states
 ONGOING   = "ongoing"
 RED_WIN   = "red_win"
 BLACK_WIN = "black_win"
@@ -48,14 +46,12 @@ AIVAI_MODE = "aivai"
 AI_MINIMAX   = "minimax"
 AI_ALPHABETA = "alpha_beta"
 
-# ── Timing ────────────────────────────────────────────────────────────────────
+#Timing
 MOVE_ANIMATION_DURATION = 0.22
 AI_MOVE_DELAY           = 280
 FPS                     = 60
 
-# ══════════════════════════════════════════════════════════════════════════════
 # LAYOUT
-# ══════════════════════════════════════════════════════════════════════════════
 
 CELL_SIZE      = 62
 BOARD_OFFSET_X = 42
@@ -84,9 +80,7 @@ RESET_BUTTON_Y = 500
 PAUSE_BUTTON_Y = 560
 MENU_BUTTON_Y  = 620
 
-# ══════════════════════════════════════════════════════════════════════════════
 # COLOUR PALETTE  (warm lacquer theme)
-# ══════════════════════════════════════════════════════════════════════════════
 
 # Board
 BOARD_BG_OUTER = (168, 112,  46)
@@ -135,9 +129,7 @@ BLACK_COLOR = (  0,   0,   0)
 BEIGE       = (238, 225, 195)
 OVERLAY_COLOR = (0, 0, 0, 160)
 
-# ══════════════════════════════════════════════════════════════════════════════
 # DIFFICULTY
-# ══════════════════════════════════════════════════════════════════════════════
 
 DIFFICULTY_LEVELS = {
     "Beginner": 1,
@@ -155,7 +147,7 @@ DIFFICULTY_TIME = {
     "Master":  30.0,
 }
 
-# ── Asset paths ───────────────────────────────────────────────────────────────
+#Asset paths
 _ASSETS = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "images")
 
 RED_PIECE_IMAGES = {

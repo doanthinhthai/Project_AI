@@ -1,7 +1,3 @@
-"""
-renderer.py — Board renderer với hiệu ứng lacquer đỏ-vàng.
-board_offset_y được truyền động từ main để thích nghi với control panel.
-"""
 import pygame
 from core.constants import (
     BOARD_ROWS, BOARD_COLS,
@@ -29,9 +25,7 @@ class Renderer:
         self._board_surf_pad = 18
         self._build_board_surface()
 
-    # =========================================================================
     # PRE-BAKE STATIC BOARD
-    # =========================================================================
 
     def _build_board_surface(self):
         bw  = (BOARD_COLS - 1) * CELL_SIZE
@@ -81,16 +75,12 @@ class Renderer:
                                  (cx2+dx*G, cy2+dy*G),
                                  (cx2+dx*G+hx*L, cy2+dy*G+hy*L), 1)
 
-    # =========================================================================
     # COORDINATE HELPER (nhận board_offset_y động)
-    # =========================================================================
 
     def _px(self, row, col, oy):
         return BOARD_OFFSET_X + col*CELL_SIZE, oy + row*CELL_SIZE
 
-    # =========================================================================
     # DRAW BACKGROUND
-    # =========================================================================
 
     def draw_background(self, board_offset_y: int):
         s = self.screen
@@ -99,19 +89,14 @@ class Renderer:
             r = int(22+10*ratio); g = int(14+5*ratio); b = int(5+2*ratio)
             pygame.draw.line(s, (r,g,b), (0,y), (BOARD_AREA_WIDTH,y))
 
-    # =========================================================================
     # DRAW BOARD
-    # =========================================================================
 
     def draw_board(self, board_offset_y: int):
         pad = self._board_surf_pad
         self.screen.blit(self._board_surf,
                          (BOARD_OFFSET_X - pad, board_offset_y - pad))
 
-    # =========================================================================
     # HIGHLIGHTS
-    # =========================================================================
-
     def draw_last_move(self, move_log, oy):
         if not move_log: return
         last = move_log[-1]
@@ -143,9 +128,7 @@ class Renderer:
                 pygame.draw.circle(dot, (*VALID_MOVE_COLOR, 200), (9,9), 9)
                 self.screen.blit(dot, (x-9, y-9))
 
-    # =========================================================================
     # PIECES
-    # =========================================================================
 
     def _draw_single_piece(self, piece, px, py):
         r = CELL_SIZE//2-3
@@ -181,19 +164,14 @@ class Renderer:
             if p is not hidden:
                 self.draw_piece(p, oy)
 
-    # =========================================================================
     # FOOTER
-    # =========================================================================
-
     def draw_footer(self):
         txt = self.tiny_font.render("Made by Vu Nam Sang & Thai Doan Thinh",
                                      True, (88,68,38))
         self.screen.blit(txt, txt.get_rect(
             center=(BOARD_AREA_WIDTH//2, SCREEN_HEIGHT-16)))
 
-    # =========================================================================
     # GAME OVER OVERLAY
-    # =========================================================================
 
     def draw_game_over_overlay(self, game_state):
         if game_state == ONGOING: return
@@ -217,9 +195,7 @@ class Renderer:
                                       True, (200,185,155))
         self.screen.blit(sub, sub.get_rect(center=(cx, cy+68)))
 
-    # =========================================================================
     # FULL RENDER (nhận board_offset_y từ main)
-    # =========================================================================
 
     def render(self, board, game_manager, hud, board_offset_y: int):
         oy = board_offset_y

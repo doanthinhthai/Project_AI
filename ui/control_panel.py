@@ -14,7 +14,7 @@ from core.constants import (
     AI_ALPHABETA,
 )
 
-# ── Palette (kem nhạt / nâu đất) ──────────────────────────────────────────────
+#Palette (kem nhạt / nâu đất)
 C_BG        = (245, 230, 211)   # #F5E6D3  nền panel
 C_CARD      = (255, 245, 235)   # card nội dung box
 C_BTN       = (193, 167, 139)   # #C1A78B  nút thường
@@ -44,7 +44,7 @@ DIFF_LEVELS = [
     ("Bậc thầy",     5, 30.0),
 ]
 
-# ── Font helper ────────────────────────────────────────────────────────────────
+#Font helper
 _fc: dict = {}
 def _f(size, bold=False):
     k = (size, bold)
@@ -53,7 +53,7 @@ def _f(size, bold=False):
     return _fc[k]
 
 
-# ── Rounded rect helper ────────────────────────────────────────────────────────
+#Rounded rect helper
 def _rrect(surf, color, rect, r=10, border=0, border_color=None):
     pygame.draw.rect(surf, color, rect, border_radius=r)
     if border and border_color:
@@ -67,7 +67,7 @@ def _shadow_rect(surf, rect, r=10, offset=3, alpha=55):
     surf.blit(sh, (rect.x + 1, rect.y + offset))
 
 
-# ── Slider ────────────────────────────────────────────────────────────────────
+#Slider
 class _Slider:
     KR = 9
 
@@ -131,7 +131,7 @@ class _Slider:
         return False
 
 
-# ── Dropdown ──────────────────────────────────────────────────────────────────
+#Dropdown
 class _Dropdown:
     def __init__(self, x, y, w, h, options, selected=0):
         self.rect     = pygame.Rect(x, y, w, h)
@@ -178,9 +178,7 @@ class _Dropdown:
         return False
 
 
-# ═════════════════════════════════════════════════════════════════════════════
 # CONTROL PANEL
-# ═════════════════════════════════════════════════════════════════════════════
 class ControlPanel:
     """
     Vẽ panel điều khiển vào một vùng (x, y, w) trên màn hình.
@@ -205,7 +203,7 @@ class ControlPanel:
         ix = x + P
         iy = y + P
 
-        # ── Row 1 ─────────────────────────────────────────────────────────────
+        #Row 1
         self._btn_new  = pygame.Rect(ix,        iy, 155, self.ROW1_H)
         self._btn_undo = pygame.Rect(ix+163,    iy,  90, self.ROW1_H)
         dd_x = ix + 163 + 90 + 12
@@ -215,7 +213,7 @@ class ControlPanel:
 
         iy2 = iy + self.ROW1_H + self.ROW_GAP
 
-        # ── Row 2: diff buttons ────────────────────────────────────────────────
+        #Row 2: diff buttons
         diff_labels = [d[0] for d in DIFF_LEVELS]
         n_diff = len(diff_labels)
         cust_w = 100
@@ -231,7 +229,7 @@ class ControlPanel:
 
         iy3 = iy2 + self.ROW2_H + self.ROW_GAP
 
-        # ── Row 3: custom box ─────────────────────────────────────────────────
+        #Row 3: custom box
         self._box_rect = pygame.Rect(ix, iy3, iw, self.BOX_H)
         sx = ix + 14
         sw = iw - 28
@@ -249,7 +247,7 @@ class ControlPanel:
         self._hov_diff = [False]*n_diff
         self._hov_cust = False
 
-    # ── height ────────────────────────────────────────────────────────────────
+    #height
     @property
     def height(self) -> int:
         """Chiều cao panel khớp với BOARD_OFFSET_Y_CLOSED/OPEN trong constants."""
@@ -258,7 +256,7 @@ class ControlPanel:
             return BOARD_OFFSET_Y_OPEN  - CTRL_PANEL_Y - 14
         return BOARD_OFFSET_Y_CLOSED - CTRL_PANEL_Y - 14
 
-    # ── draw ──────────────────────────────────────────────────────────────────
+    #draw
     def draw(self, surf, mp, game_manager=None):
         h = self.height
 
@@ -268,7 +266,7 @@ class ControlPanel:
         _rrect(surf, C_BG, panel_rect, r=12,
                border=1, border_color=C_BORDER)
 
-        # ── Row 1 ─────────────────────────────────────────────────────────────
+        #Row 1
         self._hov_new  = self._btn_new.collidepoint(mp)
         self._hov_undo = self._btn_undo.collidepoint(mp)
 
@@ -291,7 +289,7 @@ class ControlPanel:
                                             self._btn_new.centery)))
         self._dd.draw(surf, mp)
 
-        # ── Row 2: difficulty ─────────────────────────────────────────────────
+        #Row 2: difficulty
         diff_labels = [d[0] for d in DIFF_LEVELS]
         for i, (r, lbl) in enumerate(zip(self._diff_rects, diff_labels)):
             self._hov_diff[i] = r.collidepoint(mp)
@@ -313,7 +311,7 @@ class ControlPanel:
         ctl = _f(13, bold=True).render("★ Tùy chỉnh", True, cust_tc)
         surf.blit(ctl, ctl.get_rect(center=self._cust_rect.center))
 
-        # ── Row 3: custom box ─────────────────────────────────────────────────
+        #Row 3: custom box
         if self._custom_open:
             box = self._box_rect
             _shadow_rect(surf, box, r=10, offset=3, alpha=35)
@@ -328,7 +326,7 @@ class ControlPanel:
                 True, C_TEXT_DIM)
             surf.blit(note, (box.x + 14, box.bottom - 18))
 
-    # ── events ────────────────────────────────────────────────────────────────
+    #events
     def handle_event(self, event, mp):
         """
         Trả về dict với action hoặc None.
@@ -371,7 +369,7 @@ class ControlPanel:
 
         return None
 
-    # ── helpers ───────────────────────────────────────────────────────────────
+    #helpers
     def _get_depth(self) -> int:
         if self._custom_open:
             return self._sl_depth.value
