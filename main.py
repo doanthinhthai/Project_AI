@@ -1,65 +1,45 @@
-
+"""
+main.py — Entry point. Layout 3 vùng rõ ràng, không hardcode.
+"""
 import sys
 import pygame
 
 from core.constants import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
-    BOARD_OFFSET_X, BOARD_OFFSET_Y_CLOSED, BOARD_OFFSET_Y_OPEN,
-    CTRL_PANEL_X, CTRL_PANEL_Y,
-    BOARD_AREA_WIDTH,
+    WIN_W, WIN_H, FPS,
     MENU_STATE, AI_BATTLE_SELECT_STATE, PLAYING_STATE,
     PVP_MODE, PVAI_MODE, AIVAI_MODE,
-    RED, BLACK, AI_ALPHABETA, DIFFICULTY_LEVELS, DIFFICULTY_TIME,
-    CELL_SIZE,
+    RED, AI_ALPHABETA, DIFFICULTY_TIME,
 )
 from game.board         import Board
 from game.game_manager  import GameManager
+from ui.layout          import Layout
 from ui.renderer        import Renderer
-from ui.hud             import HUD
+from ui.left_panel      import LeftPanel
+from ui.right_panel     import RightPanel
 from ui.menu            import Menu
 from ui.ai_battle_menu  import AIBattleMenu
-from ui.control_panel   import ControlPanel
 
 
 def main():
     pygame.init()
-    pygame.display.set_caption(" Chinese Chess")
+    pygame.display.set_caption("象棋  Chinese Chess")
     try:
-        icon = pygame.image.load("assets/icon.png")
-        pygame.display.set_icon(icon)
+        pygame.display.set_icon(pygame.image.load("assets/icon.png"))
     except Exception:
         pass
 
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    # Window có thể resize
+    screen = pygame.display.set_mode((WIN_W, WIN_H), pygame.RESIZABLE)
     clock  = pygame.time.Clock()
 
-    board    = Board()
-    gm       = GameManager(board)
-    renderer = Renderer(screen)
-    hud      = HUD()
-    menu     = Menu()
-    ai_menu  = AIBattleMenu()
-    ctrl     = ControlPanel(CTRL_PANEL_X, CTRL_PANEL_Y,
-                             BOARD_AREA_WIDTH - CTRL_PANEL_X * 2)
-
-    def _oy() -> int:
-        return BOARD_OFFSET_Y_OPEN if ctrl._custom_open else BOARD_OFFSET_Y_CLOSED
-
-    def _apply_new_game():
-        depth  = ctrl._get_depth()
-        tlimit = ctrl._get_time()
-        name   = ctrl.get_diff_name()
-        hc     = RED if ctrl._dd.selected == 0 else BLACK
-        if gm.game_mode in (None, PVAI_MODE):
-            gm.start_pvai(depth=depth, difficulty_name=name,
-                          human_color=hc, ai_algorithm=AI_ALPHABETA)
-            ai = gm.red_ai or gm.black_ai
-            if ai and hasattr(ai, "engine"):
-                ai.engine.time_limit = tlimit
-        elif gm.game_mode == PVP_MODE:
-            gm.start_pvp()
-        elif gm.game_mode == AIVAI_MODE:
-            gm.start_aivai(AI_ALPHABETA, depth, AI_ALPHABETA, depth)
+    board      = Board()
+    gm         = GameManager(board)
+    layout     = Layout(WIN_W, WIN_H)
+    renderer   = Renderer(screen, layout)
+    left_panel = LeftPanel()
+    right_panel= RightPanel()
+    menu       = Menu()
+    ai_menu    = AIBattleMenu()
 
     running = True
     while running:
@@ -69,10 +49,19 @@ def main():
             if event.type == pygame.QUIT:
                 running = False; break
 
+            # ── Resize window ──────────────────────────────────────────────
+            if event.type == pygame.VIDEORESIZE:
+                screen = pygame.display.set_mode(
+                    (event.w, event.h), pygame.RESIZABLE)
+                layout.rebuild(event.w, event.h)
+                renderer.screen = screen
+                renderer._board_surf = None   # force rebuild
+
+            # ── MENU ──────────────────────────────────────────────────────
             if gm.app_state == MENU_STATE:
-                result = menu.handle_event(event)
-                if result:
-                    action = result[0]; depth = result[1] if len(result)>1 else 3
+                res = menu.handle_event(event)
+                if res:
+                    action = res[0]; depth = res[1] if len(res)>1 else 3
                     if action == "pvp":
                         gm.start_pvp()
                     elif action == "pvsai":
@@ -81,48 +70,46 @@ def main():
                                       human_color=RED, ai_algorithm=AI_ALPHABETA)
                         ai = gm.red_ai or gm.black_ai
                         if ai and hasattr(ai,"engine"):
-                            ai.engine.time_limit = DIFFICULTY_TIME.get(diff_name, 10.0)
+                            ai.engine.time_limit = DIFFICULTY_TIME.get(diff_name,10.0)
                     elif action == "aivai":
                         gm.app_state = AI_BATTLE_SELECT_STATE
                     elif action == "quit":
                         running = False; break
 
+            # ── AI BATTLE SETUP ───────────────────────────────────────────
             elif gm.app_state == AI_BATTLE_SELECT_STATE:
-                result = ai_menu.handle_event(event)
-                if result:
-                    if result[0] == "back": gm.app_state = MENU_STATE
-                    elif result[0] == "start":
-                        _, ra, rd, ba, bd = result
-                        gm.start_aivai(ra, rd, ba, bd)
+                res = ai_menu.handle_event(event)
+                if res:
+                    if res[0]=="back": gm.app_state=MENU_STATE
+                    elif res[0]=="start":
+                        _,ra,rd,ba,bd = res
+                        gm.start_aivai(ra,rd,ba,bd)
 
+            # ── IN-GAME ───────────────────────────────────────────────────
             elif gm.app_state == PLAYING_STATE:
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:   gm.back_to_menu()
-                    elif event.key == pygame.K_z and pygame.key.get_mods()&pygame.KMOD_CTRL:
+                    if event.key==pygame.K_ESCAPE:   gm.back_to_menu()
+                    elif event.key==pygame.K_z and pygame.key.get_mods()&pygame.KMOD_CTRL:
                         gm.undo_last_move()
-                    elif event.key == pygame.K_r:      gm.reset_board_only()
-                    elif event.key == pygame.K_SPACE:  gm.toggle_pause()
+                    elif event.key==pygame.K_r:      gm.reset_board_only()
+                    elif event.key==pygame.K_SPACE:  gm.toggle_pause()
 
-                # ── Control panel ──────────────────────────────────────────
-                cp = ctrl.handle_event(event, mp)
-                if cp:
-                    if cp.get("action") == "new_game": _apply_new_game()
-                    elif cp.get("action") == "undo":   gm.undo_last_move()
+                # Right panel events
+                action = right_panel.handle_event(event, gm, layout)
+                if action == "undo":  gm.undo_last_move()
+                elif action == "pause": gm.toggle_pause()
+                elif action == "menu":  gm.back_to_menu()
 
-                # ── HUD ───────────────────────────────────────────────────
-                ha = hud.handle_event(event, gm)
-                if ha == "undo":    gm.undo_last_move()
-                elif ha == "reset": gm.reset_board_only()
-                elif ha == "pause": gm.toggle_pause()
-                elif ha == "menu":  gm.back_to_menu()
-
-                # ── Board click ───────────────────────────────────────────
-                board_oy = _oy()
-                if (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
-                        and mp[0] < BOARD_AREA_WIDTH
-                        and mp[1] >= board_oy - 5):
-                    gm.handle_mouse_click(mp[0], mp[1],
-                                          BOARD_OFFSET_X, board_oy, CELL_SIZE)
+                # Board click — chỉ khi click trong vùng MID
+                if (event.type==pygame.MOUSEBUTTONDOWN and event.button==1
+                        and layout.mid_rect.collidepoint(mp)):
+                    cell = layout.cell_at(mp[0], mp[1])
+                    if cell:
+                        row, col = cell
+                        gm.handle_mouse_click(
+                            mp[0], mp[1],
+                            layout.board_ox, layout.board_oy,
+                            layout.cell_size)
 
         gm.update()
 
@@ -134,34 +121,7 @@ def main():
             ai_menu.draw(screen); pygame.display.flip()
 
         elif gm.app_state == PLAYING_STATE:
-            board_oy = _oy()
-
-            # 1. Vẽ background + board + pieces (không flip)
-            renderer.draw_background(board_oy)
-            renderer.draw_board(board_oy)
-            renderer.draw_last_move(board.move_log, board_oy)
-            renderer.draw_selected_piece(gm.get_selected_piece(), board_oy)
-            renderer.draw_valid_moves(gm.get_valid_moves(), board_oy)
-
-            hidden = gm.animation_hide_piece if gm.animating else None
-            renderer.draw_pieces(board.get_all_pieces(), board_oy, hidden=hidden)
-            anim = gm.get_animation_draw_data()
-            if anim:
-                renderer.draw_piece_at_float(anim["piece"], anim["row"], anim["col"], board_oy)
-
-            renderer.draw_footer()
-
-            # 2. Vẽ HUD (bên phải)
-            hud.draw(screen, gm)
-
-            # 3. Vẽ Control Panel (trên bàn cờ, đè lên background)
-            ctrl.draw(screen, mp, gm)
-
-            # 4. Overlay game over
-            renderer.draw_game_over_overlay(gm.game_state)
-
-            # 5. Flip một lần duy nhất
-            pygame.display.flip()
+            renderer.render(board, gm, left_panel, right_panel)
 
         clock.tick(FPS)
 

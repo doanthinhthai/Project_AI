@@ -1,9 +1,8 @@
 import os
 
 # ══════════════════════════════════════════════════════════════════════════════
-# LOGIC CONSTANTS
+# GAME LOGIC CONSTANTS  (không thay đổi)
 # ══════════════════════════════════════════════════════════════════════════════
-
 RED   =  1
 BLACK = -1
 EMPTY =  0
@@ -31,7 +30,6 @@ BLACK_PALACE_ROWS = {0, 1, 2}
 RED_FORWARD   = -1
 BLACK_FORWARD =  1
 
-# ── Game / App states ─────────────────────────────────────────────────────────
 ONGOING   = "ongoing"
 RED_WIN   = "red_win"
 BLACK_WIN = "black_win"
@@ -48,114 +46,133 @@ AIVAI_MODE = "aivai"
 AI_MINIMAX   = "minimax"
 AI_ALPHABETA = "alpha_beta"
 
-# ── Timing ────────────────────────────────────────────────────────────────────
 MOVE_ANIMATION_DURATION = 0.22
 AI_MOVE_DELAY           = 280
 FPS                     = 60
 
 # ══════════════════════════════════════════════════════════════════════════════
-# LAYOUT
+# WINDOW & LAYOUT  — tất cả tính từ WIN_W / WIN_H, không hardcode chồng chéo
 # ══════════════════════════════════════════════════════════════════════════════
 
-CELL_SIZE      = 62
-BOARD_OFFSET_X = 42
+WIN_W = 1280
+WIN_H =  800
 
-BOARD_AREA_WIDTH = BOARD_OFFSET_X * 2 + (BOARD_COLS - 1) * CELL_SIZE   # 580
-PANEL_WIDTH      = 295
-SCREEN_WIDTH     = BOARD_AREA_WIDTH + PANEL_WIDTH                        # 875
+# Tỉ lệ 3 vùng
+_LEFT_RATIO  = 0.22
+_MID_RATIO   = 0.54
+_RIGHT_RATIO = 1.0 - _LEFT_RATIO - _MID_RATIO   # ~0.24
 
-# Control panel (panel điều khiển phía TRÊN bàn cờ)
-# Tính từ thực tế: PAD(12) + ROW1(40) + GAP(8) + ROW2(34) + PAD(12) + MARGIN(14)
-CTRL_PANEL_X        = 4     # lề trái
-CTRL_PANEL_Y        = 6     # lề trên
+LEFT_W  = int(WIN_W * _LEFT_RATIO)               # 281
+RIGHT_W = int(WIN_W * _RIGHT_RATIO)              # 307
+MID_W   = WIN_W - LEFT_W - RIGHT_W               # phần còn lại
 
-BOARD_OFFSET_Y_CLOSED = 120   # panel đóng (không có box tùy chỉnh)
-BOARD_OFFSET_Y_OPEN   = 238   # panel mở (có box tùy chỉnh + slider)
-BOARD_OFFSET_Y        = BOARD_OFFSET_Y_CLOSED  # mặc định
+# Rect của 3 panel chính
+LEFT_RECT  = (0,          0, LEFT_W,  WIN_H)
+MID_RECT   = (LEFT_W,     0, MID_W,   WIN_H)
+RIGHT_RECT = (LEFT_W + MID_W, 0, RIGHT_W, WIN_H)
 
-BOARD_H = (BOARD_ROWS - 1) * CELL_SIZE          # 558
-SCREEN_HEIGHT = BOARD_OFFSET_Y_OPEN + BOARD_H + 30   # 826
+# Board: square, fit vừa vùng giữa với padding
+_BOARD_PAD = 18
+_cs_by_w = (MID_W  - _BOARD_PAD * 2) // (BOARD_COLS - 1)
+_cs_by_h = (WIN_H  - _BOARD_PAD * 2) // (BOARD_ROWS - 1)
+CELL_SIZE = min(_cs_by_w, _cs_by_h)             # 81
 
-BUTTON_WIDTH  = 220
+BOARD_PX_W = (BOARD_COLS - 1) * CELL_SIZE        # 648
+BOARD_PX_H = (BOARD_ROWS - 1) * CELL_SIZE        # 729 (> WIN_H → clamp)
+
+# Nếu board cao hơn window, scale lại
+if BOARD_PX_H > WIN_H - _BOARD_PAD * 2:
+    CELL_SIZE  = (WIN_H - _BOARD_PAD * 2) // (BOARD_ROWS - 1)
+    BOARD_PX_W = (BOARD_COLS - 1) * CELL_SIZE
+    BOARD_PX_H = (BOARD_ROWS - 1) * CELL_SIZE
+
+# Offset bàn cờ: căn giữa trong vùng MID, căn giữa dọc màn hình
+BOARD_OFFSET_X = LEFT_W + (MID_W  - BOARD_PX_W) // 2
+BOARD_OFFSET_Y =          (WIN_H  - BOARD_PX_H) // 2
+
+# Alias ngắn cho các module khác
+SCREEN_WIDTH  = WIN_W
+SCREEN_HEIGHT = WIN_H
+
+# ── Control panel (phía trên bàn cờ, trong vùng MID) ─────────────────────────
+# Không còn cần BOARD_OFFSET_Y_OPEN/CLOSED —
+# control panel nằm hoàn toàn trong LEFT panel hoặc pop-up nhỏ
+CTRL_PANEL_X = LEFT_W + 4
+CTRL_PANEL_Y = 6
+CTRL_PANEL_W = MID_W  - 8
+
+# ── Right panel button layout ─────────────────────────────────────────────────
+BUTTON_WIDTH  = RIGHT_W - 32
 BUTTON_HEIGHT = 46
+_BTN_X        = LEFT_W + MID_W + 16    # x gốc của các nút bên phải
 
-UNDO_BUTTON_Y  = 440
-RESET_BUTTON_Y = 500
-PAUSE_BUTTON_Y = 560
-MENU_BUTTON_Y  = 620
+UNDO_BUTTON_Y  = 420
+RESET_BUTTON_Y = 480
+PAUSE_BUTTON_Y = 540
+MENU_BUTTON_Y  = 600
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COLOUR PALETTE  (warm lacquer theme)
+# COLOUR PALETTE
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Board
-BOARD_BG_OUTER = (168, 112,  46)
-BOARD_BG_INNER = (210, 162,  82)
-BOARD_LINE     = ( 90,  55,  18)
-RIVER_COLOR    = (160, 200, 218)
+BOARD_BG_OUTER = (148,  95,  35)
+BOARD_BG_INNER = (200, 155,  72)
+BOARD_LINE     = ( 80,  48,  14)
+RIVER_COLOR    = (148, 190, 210)
 
-# Background
-BG_DARK   = ( 28,  18,   8)
-BG_PANEL  = ( 22,  14,   5)
+# Window background
+BG_DARK  = ( 18,  11,   4)
 
-# Piece highlight
+# Highlight
 SELECT_COLOR     = (255, 210,   0)
-VALID_MOVE_COLOR = ( 80, 205,  80)
-CAPTURE_COLOR    = (230,  60,  60)
-LAST_MOVE_COLOR  = (255, 180,   0)
+VALID_MOVE_COLOR = ( 70, 200,  70)
+CAPTURE_COLOR    = (225,  55,  55)
+LAST_MOVE_COLOR  = (255, 175,   0)
 
-# Panel / text
-PANEL_BG       = ( 30,  20,   8)
-PANEL_BORDER   = (140,  88,  28)
-TEXT_COLOR     = (235, 215, 175)
-TEXT_DIM       = (165, 140,  95)
-TEXT_RED_SIDE  = (230,  70,  70)
-TEXT_BLK_SIDE  = (110, 165, 235)
+# Panel
+PANEL_BG     = ( 22,  14,   6)
+PANEL_BORDER = (130,  82,  24)
+TEXT_COLOR   = (230, 210, 165)
+TEXT_DIM     = (155, 130,  85)
+TEXT_RED_SIDE  = (228,  68,  68)
+TEXT_BLK_SIDE  = (105, 158, 230)
 
-# Buttons  (5 variants)
-BUTTON_BG        = (130,  82,  30)
-BUTTON_BG_HOVER  = (175, 118,  50)
-BUTTON_BG_2      = ( 48, 112,  48)
-BUTTON_BG_2_HOV  = ( 68, 148,  68)
-BUTTON_BG_3      = ( 48,  80, 138)
-BUTTON_BG_3_HOV  = ( 68, 108, 175)
-BUTTON_BG_4      = (128,  42,  30)
-BUTTON_BG_4_HOV  = (172,  62,  46)
-BUTTON_TEXT_COLOR = (248, 238, 215)
+# Buttons
+BUTTON_BG       = (120,  75,  25)
+BUTTON_BG_HOVER = (165, 112,  45)
+BUTTON_BG_2     = ( 42, 105,  42)
+BUTTON_BG_2_HOV = ( 60, 140,  60)
+BUTTON_BG_3     = ( 42,  72, 128)
+BUTTON_BG_3_HOV = ( 60, 100, 165)
+BUTTON_BG_4     = (118,  38,  26)
+BUTTON_BG_4_HOV = (158,  55,  38)
+BUTTON_TEXT_COLOR = (245, 235, 210)
 
 # Win overlay
-WIN_BG_COLOR  = (  0,   0,   0, 165)
-WIN_RED_COLOR = (235,  75,  75)
-WIN_BLK_COLOR = (100, 160, 235)
-WIN_DRW_COLOR = (210, 185,  75)
+WIN_RED_COLOR = (232,  72,  72)
+WIN_BLK_COLOR = ( 95, 152, 230)
+WIN_DRW_COLOR = (205, 180,  70)
 
 # Misc
 WHITE       = (255, 255, 255)
 BLACK_COLOR = (  0,   0,   0)
-BEIGE       = (238, 225, 195)
-OVERLAY_COLOR = (0, 0, 0, 160)
+BEIGE       = (235, 220, 190)
+OVERLAY_COLOR = (0, 0, 0, 155)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIFFICULTY
 # ══════════════════════════════════════════════════════════════════════════════
-
 DIFFICULTY_LEVELS = {
-    "Beginner": 1,
-    "Easy":     2,
-    "Medium":   3,
-    "Hard":     4,
-    "Master":   5,
+    "Beginner": 1, "Easy": 2, "Medium": 3, "Hard": 4, "Master": 5,
 }
-
 DIFFICULTY_TIME = {
-    "Beginner": 3.0,
-    "Easy":     5.0,
-    "Medium":  10.0,
-    "Hard":    18.0,
-    "Master":  30.0,
+    "Beginner": 3.0, "Easy": 5.0, "Medium": 10.0, "Hard": 18.0, "Master": 30.0,
 }
 
-# ── Asset paths ───────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# ASSET PATHS
+# ══════════════════════════════════════════════════════════════════════════════
 _ASSETS = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "images")
 
 RED_PIECE_IMAGES = {
@@ -167,7 +184,6 @@ RED_PIECE_IMAGES = {
     CANNON:   os.path.join(_ASSETS, "red_cannon.png"),
     PAWN:     os.path.join(_ASSETS, "red_pawn.png"),
 }
-
 BLACK_PIECE_IMAGES = {
     KING:     os.path.join(_ASSETS, "black_king.png"),
     ADVISOR:  os.path.join(_ASSETS, "black_advisor.png"),

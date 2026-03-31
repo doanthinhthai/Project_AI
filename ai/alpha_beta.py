@@ -1,14 +1,23 @@
-
+"""
+alpha_beta.py — Negamax Alpha-Beta với:
+  • Zobrist hashing (thay tuple-string → tăng tốc ~5-10x)
+  • Repetition detection đúng (list + đếm >= 2 trong search stack)
+  • PVS, LMR, Null-Move Pruning, Aspiration Window
+  • Killer moves, History heuristic, TT với depth-replace
+"""
 import time
 import random
 from core.constants import RED, BLACK, EMPTY, PIECE_VALUES, KING, PAWN, BOARD_ROWS, BOARD_COLS
 from ai.evaluation.evaluation import Evaluation
 
+# =============================================================================
+# ZOBRIST TABLE — khởi tạo một lần khi import
+# =============================================================================
 _PIECE_TYPES = ["K", "A", "E", "R", "N", "C", "P"]
 _COLORS      = [1, -1]   # RED=1, BLACK=-1
 
 _zobrist_table: dict = {}
-_rng = random.Random(20250401)
+_rng = random.Random(20250401)   # seed cố định → reproducible
 
 for _r in range(BOARD_ROWS):
     for _c in range(BOARD_COLS):
@@ -16,10 +25,11 @@ for _r in range(BOARD_ROWS):
             for _col in _COLORS:
                 _zobrist_table[(_r, _c, _pt, _col)] = _rng.getrandbits(64)
 
-_ZOBRIST_SIDE = _rng.getrandbits(64)
+_ZOBRIST_SIDE = _rng.getrandbits(64)   # XOR khi đổi lượt
 
 
 def _compute_hash(board, color: int) -> int:
+    """Tính Zobrist hash từ đầu. Chỉ dùng lúc khởi tạo."""
     h = 0
     for r in range(BOARD_ROWS):
         for c in range(BOARD_COLS):
@@ -49,8 +59,13 @@ class AlphaBeta:
         self.tt          = {}
         self.max_tt_size = 300_000
 
-        # Search stats
-        self.node_count = 0
+        # Search stats — đọc từ left_panel sau mỗi lần tìm
+        self.node_count      = 0   # tổng node đã visit
+        self.pruned_count    = 0   # số nhánh bị cắt (beta cutoff)
+        self.best_score      = 0   # điểm đánh giá tốt nhất
+        self.best_move_found = None  # nước đi tốt nhất
+        self.search_depth    = 0   # depth thực tế đã hoàn thành
+        self.tt_hits         = 0   # số lần TT hit
 
         # Killer moves
         self.killer_moves = {}
@@ -73,12 +88,22 @@ class AlphaBeta:
     # =========================================================================
 
     def set_history(self, history):
+        """
+        Nhận lịch sử từ bên ngoài.
+        history: list of board-key strings (từ game_manager.board_history).
+        Ta convert sang list of int bằng hash() để so sánh O(1).
+        """
         self.game_history = [hash(h) for h in history]
 
     def get_best_move(self, board, color):
-        self.node_count  = 0
-        self.stop_search = False
-        self.start_time  = time.perf_counter()
+        self.node_count      = 0
+        self.pruned_count    = 0
+        self.tt_hits         = 0
+        self.best_score      = 0
+        self.best_move_found = None
+        self.search_depth    = 0
+        self.stop_search     = False
+        self.start_time      = time.perf_counter()
         self.search_stack.clear()
         self.killer_moves.clear()
         # Giữ history_table giữa các lần tìm (cho phép học tích luỹ)
@@ -169,6 +194,9 @@ class AlphaBeta:
             if not self.stop_search and cur_best_move is not None:
                 best_score = cur_best_score
                 best_move  = cur_best_move
+                self.best_score      = best_score
+                self.best_move_found = best_move
+                self.search_depth    = depth
                 self._store_tt(root_hash, depth, best_score, self.EXACT, best_move)
                 root_moves = self._order_moves(board, root_moves, color, 0, best_move)
 
@@ -199,12 +227,13 @@ class AlphaBeta:
         tt_entry = self.tt.get(current_hash)
         tt_move  = None
         if tt_entry is not None and tt_entry["depth"] >= depth:
+            self.tt_hits += 1
             flag, tt_score = tt_entry["flag"], tt_entry["score"]
             tt_move = tt_entry["best_move"]
-            if flag == self.EXACT:      return tt_score
+            if flag == self.EXACT:        return tt_score
             elif flag == self.LOWERBOUND: alpha = max(alpha, tt_score)
             elif flag == self.UPPERBOUND: beta  = min(beta,  tt_score)
-            if alpha >= beta:            return tt_score
+            if alpha >= beta:             return tt_score
         elif tt_entry is not None:
             tt_move = tt_entry["best_move"]   # dùng move dù depth thấp hơn
 
@@ -282,6 +311,7 @@ class AlphaBeta:
             if score > alpha:
                 alpha = score
             if alpha >= beta:
+                self.pruned_count += 1
                 if not is_cap:
                     self._add_killer(ply, move)
                     self._upd_history(color, move, depth)

@@ -34,30 +34,27 @@ class Button:
             bg = self.bg_color
 
         # Shadow
-        shadow = pygame.Rect(self.rect.x + 2, self.rect.y + 3,
-                             self.rect.w, self.rect.h)
-        shadow_surf = pygame.Surface((shadow.w, shadow.h), pygame.SRCALPHA)
-        pygame.draw.rect(shadow_surf, (0, 0, 0, 60), (0, 0, shadow.w, shadow.h),
-                         border_radius=self.radius)
-        screen.blit(shadow_surf, (shadow.x, shadow.y))
+        shadow_surf = pygame.Surface((self.rect.w+2, self.rect.h+3), pygame.SRCALPHA)
+        pygame.draw.rect(shadow_surf, (0,0,0,55),
+                         (2,3,self.rect.w,self.rect.h), border_radius=self.radius)
+        screen.blit(shadow_surf, (self.rect.x, self.rect.y))
 
         # Body
         pygame.draw.rect(screen, bg, self.rect, border_radius=self.radius)
 
         # Top shine
-        shine = pygame.Rect(self.rect.x + 4, self.rect.y + 3,
-                            self.rect.w - 8, self.rect.h // 3)
+        shine = pygame.Rect(self.rect.x+4, self.rect.y+3,
+                            self.rect.w-8, self.rect.h//3)
         shine_surf = pygame.Surface((shine.w, shine.h), pygame.SRCALPHA)
-        shine_surf.fill((255, 255, 255, 18))
+        shine_surf.fill((255,255,255,16))
         screen.blit(shine_surf, (shine.x, shine.y))
 
         # Border
-        pygame.draw.rect(screen, (0, 0, 0, 120), self.rect, 2,
+        pygame.draw.rect(screen, (0,0,0,100), self.rect, 2,
                          border_radius=self.radius)
 
-        # Label
-        label = f"{self.icon}  {self.text}" if self.icon else self.text
-        surf  = font.render(label, True, self.text_color)
+        # Label — chỉ dùng text, không dùng emoji icon
+        surf = font.render(self.text, True, self.text_color)
         screen.blit(surf, surf.get_rect(center=self.rect.center))
 
     def is_clicked(self, pos):
