@@ -24,8 +24,12 @@ class AIPlayer:
                 time_limit=30.0
             )
 
-    def get_best_move(self, board, color):
+    def get_best_move(self, board, color,history=None):
         start = time.perf_counter()
+        if history:
+            self.engine.set_history(history)
+        else:
+            self.engine.set_history([])
         move = self.engine.get_best_move(board, color)
         end = time.perf_counter()
         self.last_think_time = end - start
