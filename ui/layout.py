@@ -31,7 +31,7 @@ class Layout:
     def _compute(self):
         sw, sh = self.sw, self.sh
 
-        # ── 3 vùng ngang ──────────────────────────────────────────────────────
+        #3 vùng ngang
         lw = int(sw * self.LEFT_RATIO)
         rw = int(sw * self.RIGHT_RATIO)
         mw = sw - lw - rw          # MID chiếm phần còn lại
@@ -40,7 +40,7 @@ class Layout:
         self.mid_rect   = pygame.Rect(lw,      0, mw, sh)
         self.right_rect = pygame.Rect(lw + mw, 0, rw, sh)
 
-        # ── Cell size: fit vào MID với padding, không vượt MAX_CELL ──────────
+        #Cell size: fit vào MID với padding, không vượt MAX_CELL
         avail_w = mw - self.BOARD_PAD_H * 2
         avail_h = sh - self.BOARD_PAD_V * 2
 
@@ -66,14 +66,14 @@ class Layout:
         f = self.BOARD_FRAME
         self.board_rect = pygame.Rect(bx - f, by - f, bpw + f*2, bph + f*2)
 
-        # ── Kiểm tra không overlap ────────────────────────────────────────────
+        #Kiểm tra không overlap
         # Board phải nằm hoàn toàn trong MID
         assert bx >= lw,           f"Board tràn trái: bx={bx} < lw={lw}"
         assert bx + bpw <= lw + mw, f"Board tràn phải: {bx+bpw} > {lw+mw}"
         assert by >= 0,             f"Board tràn trên: by={by}"
         assert by + bph <= sh,      f"Board tràn dưới: {by+bph} > {sh}"
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    #Helpers
 
     def px(self, row: int, col: int) -> tuple:
         """Tọa độ pixel của giao điểm (row, col)."""

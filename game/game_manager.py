@@ -9,6 +9,7 @@ from core.constants import (
 )
 from game.rules import Rules
 from ai.ai_player import AIPlayer
+from game.match_record import MatchRecord
 
 
 class GameManager:
@@ -42,9 +43,10 @@ class GameManager:
         self.animation_hide_piece = None
 
         # ── Lịch sử board để phát hiện lặp nước ──────────────────────────────
-        # Dùng LIST (không phải set) để đếm số lần xuất hiện chính xác.
-        # Mỗi phần tử là string hash của trạng thái board.
         self.board_history: list = []
+
+        # ── Match record (lịch sử ván đấu + phân tích AI) ────────────────────
+        self.match_record: MatchRecord = MatchRecord()
 
     # =========================================================================
     # SELECTION & TURN
@@ -72,6 +74,12 @@ class GameManager:
     def reset_board_only(self):
         self.board.reset_board()
         self.board_history = []
+        self.match_record  = MatchRecord(
+            game_mode  = self.game_mode or "",
+            red_algo   = self.red_ai.algorithm   if self.red_ai   else "human",
+            black_algo = self.black_ai.algorithm  if self.black_ai else "human",
+            difficulty = self.global_difficulty_name,
+        )
         self.current_turn = RED
         self.status_message = "Turn: RED"
         self.game_state = ONGOING
@@ -241,14 +249,17 @@ class GameManager:
                 else:                king_black = True
 
         if not king_red:
-            self.game_state = BLACK_WIN; return
+            self.game_state = BLACK_WIN
+            self.match_record.finish("black_win"); return
         if not king_black:
-            self.game_state = RED_WIN;  return
+            self.game_state = RED_WIN
+            self.match_record.finish("red_win");  return
 
         # Lặp nước → hoà
         if self.is_repetition():
             self.game_state = DRAW
             self.status_message = "HÒA! (lặp nước)"
+            self.match_record.finish("draw")
             return
 
         # Hết nước đi
@@ -373,6 +384,14 @@ class GameManager:
             move = self.animation_move
             self.board.make_move(move)
             self.update_history()            # ghi lịch sử SAU khi đi
+
+            # Ghi vào MatchRecord
+            ai = self.get_current_ai()
+            if ai is not None:
+                candidates = ai.get_candidates(self.current_turn)
+                self.match_record.add_ai_move(move, self.current_turn, ai, candidates)
+            else:
+                self.match_record.add_human_move(move, self.current_turn)
 
             next_turn = -self.current_turn
             self.check_game_over(next_turn)

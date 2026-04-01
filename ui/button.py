@@ -1,14 +1,10 @@
-"""
-button.py — Button widget với hover animation và icon support
-"""
+
 import pygame
 from core.constants import BUTTON_BG, BUTTON_BG_HOVER, BUTTON_TEXT_COLOR
 
 
 class Button:
-    """
-    Button đa năng: hỗ trợ hover animation, icon prefix, active state.
-    """
+
     def __init__(self, x, y, w, h, text,
                  bg_color=None, text_color=None,
                  hover_color=None, radius=10, icon=None):

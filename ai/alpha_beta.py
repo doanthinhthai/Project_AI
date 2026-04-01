@@ -103,6 +103,7 @@ class AlphaBeta:
         self.best_move_found = None
         self.search_depth    = 0
         self.stop_search     = False
+        self.candidate_moves = []   # list of (move, score) top-5
         self.start_time      = time.perf_counter()
         self.search_stack.clear()
         self.killer_moves.clear()
@@ -199,6 +200,16 @@ class AlphaBeta:
                 self.search_depth    = depth
                 self._store_tt(root_hash, depth, best_score, self.EXACT, best_move)
                 root_moves = self._order_moves(board, root_moves, color, 0, best_move)
+
+        # Lưu top-5 candidate moves cho MatchRecord
+        self.candidate_moves = []
+        for mv in root_moves[:6]:
+            if mv != best_move:
+                entry_tt = self.tt.get(self._move_hash(root_hash, board, mv, color))
+                s = entry_tt["score"] if entry_tt else 0
+                self.candidate_moves.append((mv, s))
+                if len(self.candidate_moves) >= 5:
+                    break
 
         return best_move
 

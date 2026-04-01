@@ -1,8 +1,4 @@
-"""
-left_panel.py — AI Analysis Panel (bên trái).
-Hiển thị đầy đủ: Evaluation, Best Move, Depth, Nodes,
-Think Time, Pruned branches, TT hits, Move log.
-"""
+
 import pygame
 from core.constants import (
     PANEL_BG, PANEL_BORDER, TEXT_COLOR, TEXT_DIM,
@@ -12,7 +8,6 @@ from core.constants import (
     PVP_MODE, PVAI_MODE, AIVAI_MODE,
 )
 
-# Tên tiếng Việt cho loại quân
 _PIECE_NAME = {
     KING: "Tướng", ADVISOR: "Sĩ", ELEPHANT: "Tượng",
     ROOK: "Xe",    KNIGHT:  "Mã", CANNON:   "Pháo", PAWN: "Tốt",
@@ -23,7 +18,6 @@ def _f(size, bold=False):
 
 
 def _fmt_score(score: int) -> str:
-    """Chuyển điểm evaluation sang chuỗi dễ đọc."""
     if score >= 9_000_000:   return "CHECKMATE +"
     if score <= -9_000_000:  return "CHECKMATE -"
     if score > 0:            return f"+{score}"
@@ -31,7 +25,6 @@ def _fmt_score(score: int) -> str:
 
 
 def _fmt_move(move) -> str:
-    """Tên nước đi dạng: Xe (1,0)→(1,4)"""
     if move is None:
         return "—"
     pname = _PIECE_NAME.get(move.piece_moved.piece_type, move.piece_moved.piece_type)
@@ -46,14 +39,13 @@ def _fmt_nodes(n: int) -> str:
 
 class LeftPanel:
     PAD   = 12
-    ROW_H = 19   # chiều cao mỗi dòng info
+    ROW_H = 19
 
-    # Màu accent cho từng section header
-    C_HDR_MAIN = (195, 148, 42)   # vàng
-    C_HDR_SUB  = (155, 118, 62)   # nâu nhạt
-    C_GOOD     = ( 80, 200,  80)  # xanh lá = lợi thế dương
-    C_BAD      = (220,  70,  70)  # đỏ = bất lợi
-    C_NEUTRAL  = (180, 165, 120)  # trắng ngà
+    C_HDR_MAIN = (195, 148, 42)
+    C_HDR_SUB  = (155, 118, 62)
+    C_GOOD     = ( 80, 200,  80)
+    C_BAD      = (220,  70,  70)
+    C_NEUTRAL  = (180, 165, 120)
 
     def __init__(self):
         self._head_f  = _f(15, bold=True)
@@ -63,11 +55,8 @@ class LeftPanel:
         self._log_f   = _f(12)
         self._tiny_f  = _f(11)
 
-        # Cache surface panel bg (tránh vẽ lại gradient mỗi frame)
         self._bg_surf  = None
         self._bg_size  = (0, 0)
-
-    # ── Background ────────────────────────────────────────────────────────────
 
     def _get_bg(self, w, h):
         if self._bg_surf is None or self._bg_size != (w, h):
@@ -80,10 +69,7 @@ class LeftPanel:
             self._bg_size = (w, h)
         return self._bg_surf
 
-    # ── Draw helpers ──────────────────────────────────────────────────────────
-
     def _section_title(self, surf, x, y, w, title, color=None):
-        """Vẽ tiêu đề section + gạch chân, trả về y tiếp theo."""
         c = color or self.C_HDR_SUB
         lbl = self._sec_f.render(title, True, c)
         surf.blit(lbl, (x, y))
@@ -92,7 +78,6 @@ class LeftPanel:
         return y + 5
 
     def _row(self, surf, x, y, label, value, vc=None):
-        """Label: Value trên một dòng, trả về y tiếp theo."""
         ll = self._lbl_f.render(label, True, TEXT_DIM)
         vl = self._val_f.render(str(value), True, vc or self.C_NEUTRAL)
         surf.blit(ll, (x, y))
@@ -103,7 +88,6 @@ class LeftPanel:
         pygame.draw.line(surf, (55, 38, 14), (x, y), (x + w, y), 1)
         return y + 7
 
-    # ── Main draw ─────────────────────────────────────────────────────────────
 
     def draw(self, screen: pygame.Surface, layout, game_manager):
         rect = layout.left_rect
@@ -112,11 +96,9 @@ class LeftPanel:
         w    = rect.width - P * 2
         gm   = game_manager
 
-        # Panel background
         bg = self._get_bg(rect.width, rect.height)
         screen.blit(bg, (rect.x, rect.y))
 
-        # Right border glow
         for xi in range(3):
             s2 = pygame.Surface((1, rect.height), pygame.SRCALPHA)
             s2.fill((185, 138, 38, 65 - xi * 20))
@@ -124,7 +106,6 @@ class LeftPanel:
 
         y = rect.y + P
 
-        # ── Header ────────────────────────────────────────────────────────────
         hdr = self._head_f.render("AI  ANALYSIS", True, self.C_HDR_MAIN)
         screen.blit(hdr, hdr.get_rect(centerx=rect.centerx, y=y))
         y += 22
@@ -140,7 +121,6 @@ class LeftPanel:
             no_ai = self._lbl_f.render("No AI active (PvP mode)", True, TEXT_DIM)
             screen.blit(no_ai, (x, y)); y += 22
         else:
-            # Vẽ stats cho từng AI có mặt
             for ai_obj, side_label, side_color in [
                 (red_ai,  "RED  AI",   TEXT_RED_SIDE),
                 (blk_ai,  "BLACK AI",  TEXT_BLK_SIDE),
@@ -150,10 +130,8 @@ class LeftPanel:
 
                 engine = getattr(ai_obj, "engine", None)
 
-                # Section header
                 y = self._section_title(screen, x, y, w, side_label, side_color)
 
-                # ── Algorithm & Depth ─────────────────────────────────────────
                 algo = ai_obj.algorithm
                 max_d = ai_obj.max_depth
                 done_d = getattr(engine, "search_depth", 0) if engine else 0
@@ -162,11 +140,8 @@ class LeftPanel:
                 y = self._row(screen, x, y, "Done depth:", f"{done_d}",
                               self.C_GOOD if done_d >= max_d else self.C_NEUTRAL)
 
-                # ── Evaluation score ──────────────────────────────────────────
                 if engine:
                     raw_score = getattr(engine, "best_score", 0)
-                    # Score từ góc nhìn của bên đang đi — normalize về đỏ
-                    # (nếu là black_ai thì score đã là -raw với góc nhìn đỏ)
                     display_score = raw_score if ai_obj is red_ai else -raw_score
                     score_str = _fmt_score(display_score)
                     sc_color = (self.C_GOOD if display_score > 50
@@ -174,11 +149,10 @@ class LeftPanel:
                                 else self.C_NEUTRAL)
                     y = self._row(screen, x, y, "Evaluation:", score_str, sc_color)
 
-                # ── Best Move ─────────────────────────────────────────────────
+                # Best Move
                 if engine:
                     bm = getattr(engine, "best_move_found", None)
                     bm_str = _fmt_move(bm)
-                    # Bọc xuống nếu dài
                     bm_surf = self._val_f.render(bm_str, True, self.C_NEUTRAL)
                     lbl_surf = self._lbl_f.render("Best move:", True, TEXT_DIM)
                     screen.blit(lbl_surf, (x, y))
@@ -186,7 +160,7 @@ class LeftPanel:
                     screen.blit(bm_surf, (x + 8, y))
                     y += self.ROW_H
 
-                # ── Nodes & Pruning ───────────────────────────────────────────
+                # Nodes & Pruning
                 if engine:
                     nodes   = getattr(engine, "node_count",   0)
                     pruned  = getattr(engine, "pruned_count", 0)
@@ -218,7 +192,7 @@ class LeftPanel:
                         screen.blit(pct_lbl, (x, y + 9))
                         y += 22
 
-                # ── Think time ────────────────────────────────────────────────
+                # Think time
                 think = getattr(ai_obj, "last_think_time", 0.0)
                 tc = (self.C_GOOD if think < 1.0
                       else self.C_NEUTRAL if think < 5.0
@@ -227,7 +201,6 @@ class LeftPanel:
 
                 y = self._divider(screen, x, y, w)
 
-        # ── Move Log ──────────────────────────────────────────────────────────
         y = self._section_title(screen, x, y, w, "MOVE  LOG")
 
         log    = gm.board.move_log

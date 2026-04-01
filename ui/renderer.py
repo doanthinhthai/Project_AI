@@ -1,7 +1,4 @@
-"""
-renderer.py — Vẽ bàn cờ và 3 panel.
-Nhận Layout object — không có hardcode tọa độ nào.
-"""
+
 import pygame
 from core.constants import (
     BOARD_ROWS, BOARD_COLS,
@@ -30,7 +27,6 @@ class Renderer:
         self._small_font = _f(19)
         self._tiny_font  = _f(13)
 
-    # ── rebuild board surface khi cell_size thay đổi ──────────────────────────
     def _ensure_board_surf(self):
         cs = self.lay.cell_size
         if cs == self._last_cell_size and self._board_surf is not None:
@@ -46,14 +42,11 @@ class Renderer:
         surf = pygame.Surface((pw + pad*2, ph + pad*2))
         ox = oy = pad
 
-        # Outer wood frame
         pygame.draw.rect(surf, BOARD_BG_OUTER,
                          (0, 0, pw+pad*2, ph+pad*2), border_radius=8)
-        # Inner playing surface
         pygame.draw.rect(surf, BOARD_BG_INNER,
                          (pad-8, pad-8, pw+16, ph+16), border_radius=5)
 
-        # River strip
         pygame.draw.rect(surf, RIVER_COLOR,
                          (ox, oy+4*cs+2, pw, cs-4))
         rf = self._river_font
@@ -61,22 +54,18 @@ class Renderer:
             lbl = rf.render(txt, True, (48, 88, 132))
             surf.blit(lbl, lbl.get_rect(center=(x, oy+int(4.5*cs))))
 
-        # Horizontal lines
         for r in range(BOARD_ROWS):
             y = oy + r*cs
             pygame.draw.line(surf, BOARD_LINE, (ox, y), (ox+pw, y), 1)
-        # Vertical lines (break at river)
         for c in range(BOARD_COLS):
             x = ox + c*cs
             pygame.draw.line(surf, BOARD_LINE, (x, oy),          (x, oy+4*cs), 1)
             pygame.draw.line(surf, BOARD_LINE, (x, oy+5*cs),     (x, oy+9*cs), 1)
 
-        # Palace diagonals
         for r0,c0,r1,c1 in [(7,3,9,5),(7,5,9,3),(0,3,2,5),(0,5,2,3)]:
             pygame.draw.line(surf, BOARD_LINE,
                              (ox+c0*cs, oy+r0*cs), (ox+c1*cs, oy+r1*cs), 1)
 
-        # Tick marks
         L=6; G=3
         marks = [(2,1),(2,7),(7,1),(7,7),
                  (3,0),(3,2),(3,4),(3,6),(3,8),
@@ -90,7 +79,7 @@ class Renderer:
                                  (cx2+dx*G+hx*L, cy2+dy*G+hy*L), 1)
         return surf
 
-    # ── background ────────────────────────────────────────────────────────────
+    # background
     def draw_background(self):
         s = self.screen
         sh = s.get_height()
@@ -101,7 +90,7 @@ class Renderer:
             r = int(18 + 10*t); g = int(10 + 6*t); b = int(4 + 2*t)
             pygame.draw.line(s, (r,g,b), (0,y), (sw,y))
 
-    # ── board area ────────────────────────────────────────────────────────────
+    # board area
     def draw_board(self):
         self._ensure_board_surf()
         lay = self.lay
@@ -109,7 +98,7 @@ class Renderer:
         self.screen.blit(self._board_surf,
                          (lay.board_ox - pad, lay.board_oy - pad))
 
-    # ── highlights ────────────────────────────────────────────────────────────
+    # highlights
     def draw_last_move(self, move_log):
         if not move_log: return
         last = move_log[-1]
@@ -143,7 +132,7 @@ class Renderer:
                 pygame.draw.circle(dot, (*VALID_MOVE_COLOR,195), (r,r), r)
                 self.screen.blit(dot, (x-r, y-r))
 
-    # ── pieces ────────────────────────────────────────────────────────────────
+    # pieces
     def _draw_piece(self, piece, px, py):
         cs = self.lay.cell_size
         r  = cs//2 - 3
@@ -181,7 +170,7 @@ class Renderer:
         y = self.lay.board_oy + anim_data["row"] * self.lay.cell_size
         self._draw_piece(anim_data["piece"], int(x), int(y))
 
-    # ── panel separators ──────────────────────────────────────────────────────
+    #panel separators
     def draw_panel_borders(self):
         s   = self.screen
         sh  = s.get_height()
@@ -195,7 +184,7 @@ class Renderer:
                          (lay.right_rect.left, 0),
                          (lay.right_rect.left, sh), 1)
 
-    # ── footer ────────────────────────────────────────────────────────────────
+    # footer
     def draw_footer(self):
         sh = self.screen.get_height()
         lx = self.lay.left_rect.right
@@ -205,7 +194,7 @@ class Renderer:
             "Made by Vu Nam Sang & Thai Doan Thinh", True, (80,62,35))
         self.screen.blit(t, t.get_rect(center=(cx, sh-14)))
 
-    # ── game over overlay ─────────────────────────────────────────────────────
+    # game over overlay
     def draw_game_over_overlay(self, game_state):
         if game_state == ONGOING: return
         s   = self.screen
@@ -227,7 +216,6 @@ class Renderer:
                                        True,(200,185,158))
         s.blit(sub, sub.get_rect(center=(cx,cy+72)))
 
-    # ── MASTER RENDER (gọi từ main) ───────────────────────────────────────────
     def render(self, board, gm, left_panel, right_panel):
         self.draw_background()
         self.draw_board()

@@ -16,7 +16,11 @@ class AIPlayer:
         self.last_think_time = 0.0
 
         if algorithm == "minimax":
-            self.engine = Minimax(self.move_generator, max_depth=max_depth)
+            # Minimax tối đa depth 3
+            capped_depth = min(max_depth, 3)
+            self.engine = Minimax(self.move_generator,
+                                  max_depth=capped_depth,
+                                  time_limit=10.0)
         else:
             self.engine = AlphaBeta(
                 self.move_generator,
@@ -24,13 +28,43 @@ class AIPlayer:
                 time_limit=30.0
             )
 
-    def get_best_move(self, board, color,history=None):
-        start = time.perf_counter()
-        if history:
-            self.engine.set_history(history)
+    def set_difficulty(self, difficulty_name: str):
+        """Cập nhật depth + time_limit theo tên cấp độ."""
+        from core.constants import DIFFICULTY_LEVELS, DIFFICULTY_TIME, DIFFICULTY_LEVELS_MINIMAX
+        if self.algorithm == "minimax":
+            preset = DIFFICULTY_LEVELS_MINIMAX.get(
+                difficulty_name,
+                {"depth": 2, "time_limit": 5.0}
+            )
+            self.engine.max_depth  = preset["depth"]
+            self.engine.time_limit = preset["time_limit"]
+            self.max_depth = preset["depth"]
         else:
-            self.engine.set_history([])
+            self.engine.max_depth  = DIFFICULTY_LEVELS.get(difficulty_name, 4)
+            self.engine.time_limit = DIFFICULTY_TIME.get(difficulty_name, 10.0)
+            self.max_depth = self.engine.max_depth
+
+    def get_best_move(self, board, color, history=None):
+        start = time.perf_counter()
+        self.engine.set_history(history or [])
         move = self.engine.get_best_move(board, color)
-        end = time.perf_counter()
+        end  = time.perf_counter()
         self.last_think_time = end - start
         return move
+
+    def get_candidates(self, color) -> list:
+        """
+        Trả về list CandidateMove từ lần tìm kiếm vừa xong.
+        Gọi sau get_best_move().
+        """
+        from game.match_record import CandidateMove, build_notation
+        raw = getattr(self.engine, "candidate_moves", [])
+        result = []
+        for mv, score in raw:
+            c = CandidateMove(
+                move     = mv,
+                score    = score,
+                notation = build_notation(mv, color),
+            )
+            result.append(c)
+        return result

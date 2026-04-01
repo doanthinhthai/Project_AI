@@ -163,11 +163,21 @@ OVERLAY_COLOR = (0, 0, 0, 155)
 # ══════════════════════════════════════════════════════════════════════════════
 # DIFFICULTY
 # ══════════════════════════════════════════════════════════════════════════════
+# Depth cho AlphaBeta (thấp hơn vì có time limit bù lại)
 DIFFICULTY_LEVELS = {
-    "Beginner": 1, "Easy": 2, "Medium": 3, "Hard": 4, "Master": 5,
+    "Beginner": 2, "Easy": 3, "Medium": 4, "Hard": 5, "Master": 6,
 }
+# Time limit (giây) cho AlphaBeta
 DIFFICULTY_TIME = {
-    "Beginner": 3.0, "Easy": 5.0, "Medium": 10.0, "Hard": 18.0, "Master": 30.0,
+    "Beginner": 2.0, "Easy": 5.0, "Medium": 10.0, "Hard": 18.0, "Master": 30.0,
+}
+# Minimax: tối đa depth=3, map 5 tên → 3 cấp thực tế
+DIFFICULTY_LEVELS_MINIMAX = {
+    "Beginner": {"depth": 1, "time_limit": 3.0},
+    "Easy":     {"depth": 1, "time_limit": 3.0},
+    "Medium":   {"depth": 2, "time_limit": 5.0},
+    "Hard":     {"depth": 3, "time_limit": 10.0},
+    "Master":   {"depth": 3, "time_limit": 10.0},
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

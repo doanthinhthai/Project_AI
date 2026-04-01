@@ -33,10 +33,21 @@ class Menu:
                              BUTTON_BG_4, BUTTON_TEXT_COLOR, BUTTON_BG_4_HOV, icon="✕"),
         }
 
-        self.difficulty_names = list(DIFFICULTY_LEVELS.keys())
-        self.difficulty_index = 2  # Medium
+        # Algo toggle (mặc định AlphaBeta)
+        self.algo        = AI_ALPHABETA
+        self.algo_button = Button(0, 0, 240, 48, "",
+                                   BUTTON_BG, BUTTON_TEXT_COLOR, BUTTON_BG_HOVER)
+
+        # Difficulty — tự thay đổi theo algo
+        self._ab_levels      = list(DIFFICULTY_LEVELS.keys())         # 5 cấp
+        self._mm_levels      = ["Easy", "Medium", "Hard"]             # 3 cấp Minimax
+        self.difficulty_index = 1   # mặc định index 1
         self.diff_button = Button(0, 0, 240, 48, "",
                                    BUTTON_BG_3, BUTTON_TEXT_COLOR, BUTTON_BG_3_HOV)
+
+    @property
+    def difficulty_names(self):
+        return self._mm_levels if self.algo == AI_MINIMAX else self._ab_levels
 
     # ── Load background ────────────────────────────────────────────────────────
 
@@ -122,9 +133,6 @@ class Menu:
         ts    = self.title_font.render("Chinese Chess", True, (60, 30, 5))
         screen.blit(ts, ts.get_rect(center=(cx+2, card_y+124)))
         screen.blit(title, title.get_rect(center=(cx, card_y+122)))
-
-
-
         # ── 4. Divider ────────────────────────────────────────────────────────
         div_y = card_y + card_h + 16
         for dx, alpha in [(0,180),(1,80),(2,30)]:
@@ -143,10 +151,19 @@ class Menu:
             btn.update_hover(mp)
             btn.draw(screen, self.button_font)
 
-        # Difficulty button (bên dưới quit)
-        self.diff_button.text = f"Difficulty: {self.difficulty_names[self.difficulty_index]}"
+        # Algo toggle button
+        algo_label = "Algo: Minimax" if self.algo == AI_MINIMAX else "Algo: Alpha-Beta"
+        self.algo_button.text  = algo_label
+        self.algo_button.rect.x = cx - 120
+        self.algo_button.rect.y = btn_start_y + len(keys)*gap + 8
+        self.algo_button.update_hover(mp)
+        self.algo_button.draw(screen, self.button_font)
+
+        # Difficulty button (bên dưới algo)
+        diff_name = self.difficulty_names[self.difficulty_index]
+        self.diff_button.text  = f"Difficulty: {diff_name}"
         self.diff_button.rect.x = cx - 120
-        self.diff_button.rect.y = btn_start_y + len(keys)*gap + 8
+        self.diff_button.rect.y = btn_start_y + len(keys)*gap + 8 + gap
         self.diff_button.update_hover(mp)
         self.diff_button.draw(screen, self.button_font)
 
@@ -163,16 +180,33 @@ class Menu:
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             pos = event.pos
+
+            # Toggle Algo: AlphaBeta ↔ Minimax
+            if self.algo_button.is_clicked(pos):
+                self.algo = AI_MINIMAX if self.algo == AI_ALPHABETA else AI_ALPHABETA
+                # Clamp index về trong phạm vi danh sách mới
+                self.difficulty_index = min(self.difficulty_index,
+                                            len(self.difficulty_names) - 1)
+                return ("algo_changed", self.get_selected_depth())
+
+            # Cycle difficulty
             if self.diff_button.is_clicked(pos):
-                self.difficulty_index = (self.difficulty_index+1) % len(self.difficulty_names)
+                self.difficulty_index = (self.difficulty_index + 1) % len(self.difficulty_names)
                 return ("difficulty_changed", self.get_selected_depth())
+
             for key, btn in self.buttons.items():
                 if btn.is_clicked(pos):
                     return (key, self.get_selected_depth())
         return None
 
     def get_selected_depth(self):
-        return DIFFICULTY_LEVELS[self.difficulty_names[self.difficulty_index]]
+        name = self.difficulty_names[self.difficulty_index]
+        if self.algo == AI_MINIMAX:
+            return DIFFICULTY_LEVELS_MINIMAX.get(name, {"depth": 2})["depth"]
+        return DIFFICULTY_LEVELS[name]
 
     def get_selected_difficulty_name(self):
         return self.difficulty_names[self.difficulty_index]
+
+    def get_selected_algo(self):
+        return self.algo
